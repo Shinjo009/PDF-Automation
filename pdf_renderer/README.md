@@ -23,6 +23,11 @@ curl -X POST https://bio-ai-reports.supershyft.com/api/reports \
   -H "Origin: https://api.supershyft.com" \
   --data-binary @report.json
 
+# Regenerate at an existing slug (archives prior JSON/PDF, same permanent URL)
+curl -X POST https://bio-ai-reports.supershyft.com/api/reports/regenerate \
+  -H "Content-Type: application/json" \
+  --data-binary @report_with_slug.json
+
 # Fetch stored PDF
 # GET https://bio-ai-reports.supershyft.com/r/{slug}
 ```

@@ -15,7 +15,8 @@ Usage (from repo root):
     PYTHONPATH=. python test_engine/report_link_server.py
 
 API:
-    POST /api/reports          JSON body (payload) → { slug, url, record_id, patient, variant }
+    POST /api/reports              JSON body (payload) → { slug, url, record_id, patient, variant }
+    POST /api/reports/regenerate   JSON body with slug + BioReport → same response, overwrites slug
     GET  /r/{slug}             application/pdf (inline)
     GET  /r/{slug}?dl=1        force download
     GET  /                     status page
@@ -48,11 +49,13 @@ from modules.bioai_report.pdf_renderer.exceptions import (  # noqa: E402
     PdfValidationError,
 )
 from modules.bioai_report.pdf_renderer.report_store import (  # noqa: E402
+    archive_report_if_exists,
     extract_internal_record_id,
     load_report_json,
     load_report_pdf,
     pdf_dir,
     pdf_exists,
+    sanitize_id,
     save_report_json,
     save_report_pdf,
     store_dir,
@@ -74,6 +77,7 @@ _CORS_ORIGINS = tuple(
 )
 
 _SLUG_RE = re.compile(r"^/r/([A-Za-z0-9._-]+)/?$")
+_CORS_POST_PATHS = frozenset({"/api/reports", "/api/reports/regenerate"})
 
 
 def _cors_origin(request_origin: str | None) -> str | None:
@@ -101,6 +105,27 @@ def _patient_bits(payload: dict) -> tuple[str, str]:
     return name, variant
 
 
+def _register_report(payload: dict, *, slug: str | None = None) -> dict:
+    """Validate BioReport JSON, render PDF, persist, and return API response body."""
+    report = BioReport.model_validate(payload)
+    internal_id = extract_internal_record_id(payload)
+    public_slug = save_report_json(payload, slug=slug)
+    pdf_bytes = PdfRenderService().render_pdf(report)
+    save_report_pdf(public_slug, pdf_bytes)
+    name, variant = _patient_bits(payload)
+    return {
+        "slug": public_slug,
+        "url": _public_url(public_slug),
+        "record_id": internal_id,
+        "patient": name,
+        "variant": variant,
+        "note": (
+            "Permanent secret link. PDF stored once; "
+            "public path uses slug only (not record_id)."
+        ),
+    }
+
+
 class ReportLinkHandler(BaseHTTPRequestHandler):
     def log_message(self, fmt: str, *args) -> None:
         sys.stderr.write("%s - %s\n" % (self.address_string(), fmt % args))
@@ -120,7 +145,7 @@ class ReportLinkHandler(BaseHTTPRequestHandler):
 
     def do_OPTIONS(self) -> None:  # noqa: N802
         """CORS preflight for POST /api/reports from https://api.supershyft.com."""
-        if self.path.rstrip("/") != "/api/reports":
+        if self.path.rstrip("/") not in _CORS_POST_PATHS:
             self.send_error(404, "Not found")
             return
         if not _cors_origin(self.headers.get("Origin")):
@@ -142,7 +167,8 @@ class ReportLinkHandler(BaseHTTPRequestHandler):
         self.send_error(404, "Not found")
 
     def do_POST(self) -> None:  # noqa: N802
-        if self.path.rstrip("/") != "/api/reports":
+        path = self.path.rstrip("/")
+        if path not in _CORS_POST_PATHS:
             self.send_error(404, "Not found")
             return
         # Reject disallowed browser origins; server-to-server (no Origin) is allowed.
@@ -157,23 +183,19 @@ class ReportLinkHandler(BaseHTTPRequestHandler):
             payload = json.loads(raw.decode("utf-8"))
             if not isinstance(payload, dict):
                 raise ValueError("JSON body must be an object")
-            report = BioReport.model_validate(payload)
-            internal_id = extract_internal_record_id(payload)
-            slug = save_report_json(payload)  # generates secret slug
-            pdf_bytes = PdfRenderService().render_pdf(report)
-            save_report_pdf(slug, pdf_bytes)
-            name, variant = _patient_bits(payload)
-            body = {
-                "slug": slug,
-                "url": _public_url(slug),
-                "record_id": internal_id,
-                "patient": name,
-                "variant": variant,
-                "note": (
-                    "Permanent secret link. PDF stored once; "
-                    "public path uses slug only (not record_id)."
-                ),
-            }
+
+            if path == "/api/reports/regenerate":
+                raw_slug = payload.pop("slug", None)
+                if not isinstance(raw_slug, str) or not raw_slug.strip():
+                    raise ValueError("slug is required for regenerate")
+                slug = sanitize_id(raw_slug)
+                if not slug:
+                    raise ValueError("slug is required for regenerate")
+                archive_report_if_exists(slug)
+                body = _register_report(payload, slug=slug)
+            else:
+                body = _register_report(payload)
+
             return self._json(200, body)
         except (json.JSONDecodeError, ValueError, PdfValidationError) as exc:
             return self._text(400, str(exc))
@@ -194,6 +216,7 @@ class ReportLinkHandler(BaseHTTPRequestHandler):
 <p>Register once: we store the PDF and return a permanent secret link.</p>
 <ul>
   <li><code>POST {PUBLIC_BASE}/api/reports</code> — BioReport JSON payload → <code>url</code></li>
+  <li><code>POST {PUBLIC_BASE}/api/reports/regenerate</code> — slug + BioReport JSON → same <code>url</code></li>
   <li>CORS origin: <code>https://api.supershyft.com</code></li>
   <li><code>GET {PUBLIC_BASE}/r/&lt;slug&gt;</code> — view stored PDF</li>
   <li><code>GET …/r/&lt;slug&gt;?dl=1</code> — force download</li>

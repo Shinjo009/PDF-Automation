@@ -17,12 +17,14 @@ import os
 import re
 import secrets
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_STORE_DIR = _REPO_ROOT / "storage" / "bioreports"
 DEFAULT_PDF_DIR = _REPO_ROOT / "storage" / "pdfs"
+DEFAULT_ARCHIVE_DIR = _REPO_ROOT / "storage" / "archive"
 
 # URL-safe chars only (matches /r/{slug} route)
 _SAFE_ID = re.compile(r"[^A-Za-z0-9._-]+")
@@ -41,6 +43,12 @@ def pdf_dir() -> Path:
         path = Path(override)
     else:
         path = DEFAULT_PDF_DIR
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def archive_dir() -> Path:
+    path = Path(os.environ.get("BIOAI_ARCHIVE_DIR", str(DEFAULT_ARCHIVE_DIR)))
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -117,6 +125,29 @@ def pdf_exists(slug: str) -> bool:
 
 def exists(slug: str) -> bool:
     return json_path(slug).is_file()
+
+
+def report_exists(slug: str) -> bool:
+    return exists(slug) or pdf_exists(slug)
+
+
+def archive_report_if_exists(slug: str) -> Path | None:
+    """Move existing JSON/PDF for slug into storage/archive/{slug}/{timestamp}/."""
+    public_slug = sanitize_id(slug)
+    json_src = json_path(public_slug)
+    pdf_src = pdf_path(public_slug)
+    if not json_src.is_file() and not pdf_src.is_file():
+        return None
+
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    dest_dir = archive_dir() / public_slug / timestamp
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    if json_src.is_file():
+        json_src.replace(dest_dir / "report.json")
+    if pdf_src.is_file():
+        pdf_src.replace(dest_dir / "report.pdf")
+    return dest_dir
 
 
 # Back-compat aliases (older call sites used record_id naming)
