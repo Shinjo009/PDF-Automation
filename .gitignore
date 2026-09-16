@@ -1,9 +1,38 @@
+# Virtualenvs / secrets
 .venv/
+venv/
+env/
+.env
+.env.*
+
+# Python
 __pycache__/
-*.pyc
-.pytest_cache/
-.DS_Store
+*.py[cod]
+*$py.class
+*.so
 *.egg-info/
+.eggs/
+dist/
+build/
+.Python
+
+# Tests / coverage / type checkers
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.tox/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log
 
 # Generated previews / local fixtures
 test_engine/output_*.html
@@ -15,6 +44,9 @@ output_*.pdf
 
 # Permanent-link store (JSON + PDF files — do not commit)
 storage/
+
+# Root scratch / live-verify payloads
+/_*.json
 
 # Debug / scratch artifacts under test_engine
 test_engine/_*.png
