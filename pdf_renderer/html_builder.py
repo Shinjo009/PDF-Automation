@@ -196,8 +196,8 @@ def _health_summary_context(vm: PdfViewModel, assets: dict[str, str]) -> dict[st
         age_color = _FIGMA_SCORE_COLORS["Increased Risk"]
     else:
         age_color = score_color
-    # Green/yellow → thumbs up; orange/red → thumbs down (Figma variants).
-    thumb_up = band in ("Healthy", "Increased Risk")
+    # Thumbs up when metabolic age is equal to or lower than chronological age.
+    thumb_up = age is not None and chrono is not None and age <= chrono
     return {
         "score_display": _format_intish(score),
         "age_display": _format_intish(age),
