@@ -25,7 +25,12 @@ def _as_bioreport(report: BioReport | dict[str, Any]) -> BioReport:
     return BioReport.model_validate(report)
 
 
-async def _html_to_pdf_bytes(html: str) -> bytes:
+async def html_to_pdf_bytes(
+    html: str,
+    *,
+    width: str | None = None,
+    height: str | None = None,
+) -> bytes:
     try:
         from playwright.async_api import async_playwright
     except ImportError as exc:
@@ -59,13 +64,19 @@ async def _html_to_pdf_bytes(html: str) -> bytes:
                 except Exception:  # noqa: BLE001
                     pass
                 await page.emulate_media(media="print")
-                pdf = await page.pdf(
-                    format="A4",
-                    print_background=True,
-                    prefer_css_page_size=False,
-                    margin={"top": "0", "right": "0", "bottom": "0", "left": "0"},
-                    scale=1,
-                )
+                pdf_kwargs: dict[str, Any] = {
+                    "print_background": True,
+                    "margin": {"top": "0", "right": "0", "bottom": "0", "left": "0"},
+                    "scale": 1,
+                }
+                if width and height:
+                    pdf_kwargs["width"] = width
+                    pdf_kwargs["height"] = height
+                    pdf_kwargs["prefer_css_page_size"] = True
+                else:
+                    pdf_kwargs["format"] = "A4"
+                    pdf_kwargs["prefer_css_page_size"] = False
+                pdf = await page.pdf(**pdf_kwargs)
                 return pdf
             finally:
                 await browser.close()
@@ -86,7 +97,7 @@ class PdfRenderService:
     async def render_pdf_async(self, report: BioReport | dict[str, Any]) -> bytes:
         try:
             html = self.build_html(report)
-            return await _html_to_pdf_bytes(html)
+            return await html_to_pdf_bytes(html)
         except PdfValidationError:
             raise
         except PdfRenderDependencyError:

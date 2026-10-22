@@ -17,6 +17,8 @@ Usage (from repo root):
 API:
     POST /api/reports              JSON body (payload) → { slug, url, record_id, patient, variant }
     POST /api/reports/regenerate   JSON body with slug + BioReport → same response, overwrites slug
+    POST /api/cards                greeting-card JSON → { slug, url, card_type, receiver, sender }
+    POST /api/cards/regenerate     slug + greeting-card JSON → same url, overwrites slug
     GET  /r/{slug}             application/pdf (inline)
     GET  /r/{slug}?dl=1        force download
     GET  /                     status page
@@ -60,6 +62,10 @@ from modules.bioai_report.pdf_renderer.report_store import (  # noqa: E402
     save_report_pdf,
     store_dir,
 )
+from modules.bioai_report.pdf_renderer.greeting_cards import (  # noqa: E402
+    is_card_payload,
+    render_card_pdf,
+)
 from modules.bioai_report.pdf_renderer.service import PdfRenderService  # noqa: E402
 from modules.bioai_report.pdf_renderer.view_model import resolve_gender_variant  # noqa: E402
 from modules.bioai_report.report_engine.models.report import BioReport  # noqa: E402
@@ -77,7 +83,13 @@ _CORS_ORIGINS = tuple(
 )
 
 _SLUG_RE = re.compile(r"^/r/([A-Za-z0-9._-]+)/?$")
-_CORS_POST_PATHS = frozenset({"/api/reports", "/api/reports/regenerate"})
+_CORS_POST_PATHS = frozenset({
+    "/api/reports",
+    "/api/reports/regenerate",
+    "/api/cards",
+    "/api/cards/regenerate",
+})
+_CARD_POST_PATHS = frozenset({"/api/cards", "/api/cards/regenerate"})
 
 
 def _cors_origin(request_origin: str | None) -> str | None:
@@ -93,9 +105,9 @@ def _public_url(slug: str) -> str:
     return f"{PUBLIC_BASE}/r/{quote(slug)}"
 
 
-def _safe_filename(name: str) -> str:
+def _safe_filename(name: str, *, prefix: str = "BIO-AI-report") -> str:
     cleaned = re.sub(r"[^A-Za-z0-9._-]+", "_", (name or "report").strip()) or "report"
-    return f"BIO-AI-report-{cleaned}.pdf"
+    return f"{prefix}-{cleaned}.pdf"
 
 
 def _patient_bits(payload: dict) -> tuple[str, str]:
@@ -122,6 +134,25 @@ def _register_report(payload: dict, *, slug: str | None = None) -> dict:
         "note": (
             "Permanent secret link. PDF stored once; "
             "public path uses slug only (not record_id)."
+        ),
+    }
+
+
+def _register_card(payload: dict, *, slug: str | None = None) -> dict:
+    """Validate greeting-card JSON, render PDF, persist, return API response."""
+    card, pdf_bytes = render_card_pdf(payload)
+    public_slug = save_report_json(card, slug=slug)
+    save_report_pdf(public_slug, pdf_bytes)
+    return {
+        "slug": public_slug,
+        "url": _public_url(public_slug),
+        "card_type": card["card_type"],
+        "receiver": card["receiver_name"],
+        "sender": card["sender_name"],
+        "occasion": card["occasion"],
+        "note": (
+            "Permanent secret link. Greeting-card PDF stored once; "
+            "public path uses slug only."
         ),
     }
 
@@ -184,7 +215,19 @@ class ReportLinkHandler(BaseHTTPRequestHandler):
             if not isinstance(payload, dict):
                 raise ValueError("JSON body must be an object")
 
-            if path == "/api/reports/regenerate":
+            if path in _CARD_POST_PATHS:
+                if path == "/api/cards/regenerate":
+                    raw_slug = payload.pop("slug", None)
+                    if not isinstance(raw_slug, str) or not raw_slug.strip():
+                        raise ValueError("slug is required for regenerate")
+                    slug = sanitize_id(raw_slug)
+                    if not slug:
+                        raise ValueError("slug is required for regenerate")
+                    archive_report_if_exists(slug)
+                    body = _register_card(payload, slug=slug)
+                else:
+                    body = _register_card(payload)
+            elif path == "/api/reports/regenerate":
                 raw_slug = payload.pop("slug", None)
                 if not isinstance(raw_slug, str) or not raw_slug.strip():
                     raise ValueError("slug is required for regenerate")
@@ -212,11 +255,13 @@ class ReportLinkHandler(BaseHTTPRequestHandler):
   code{{background:#f2f5f4;padding:2px 6px;border-radius:6px}}
   li{{margin:8px 0}}
 </style></head><body>
-<h1>Bio-AI report links</h1>
+<h1>Bio-AI + greeting-card links</h1>
 <p>Register once: we store the PDF and return a permanent secret link.</p>
 <ul>
   <li><code>POST {PUBLIC_BASE}/api/reports</code> — BioReport JSON payload → <code>url</code></li>
   <li><code>POST {PUBLIC_BASE}/api/reports/regenerate</code> — slug + BioReport JSON → same <code>url</code></li>
+  <li><code>POST {PUBLIC_BASE}/api/cards</code> — greeting-card JSON → <code>url</code></li>
+  <li><code>POST {PUBLIC_BASE}/api/cards/regenerate</code> — slug + greeting-card JSON → same <code>url</code></li>
   <li>CORS origin: <code>https://api.supershyft.com</code></li>
   <li><code>GET {PUBLIC_BASE}/r/&lt;slug&gt;</code> — view stored PDF</li>
   <li><code>GET …/r/&lt;slug&gt;?dl=1</code> — force download</li>
@@ -237,8 +282,14 @@ class ReportLinkHandler(BaseHTTPRequestHandler):
             return self._text(404, "PDF missing for report")
 
         payload = load_report_json(slug) or {}
-        name, _variant = _patient_bits(payload) if payload else ("report", "male")
-        filename = _safe_filename(name)
+        if is_card_payload(payload):
+            filename = _safe_filename(
+                payload.get("receiver_name") or "card",
+                prefix=f"{payload.get('card_type') or 'greeting'}-card",
+            )
+        else:
+            name, _variant = _patient_bits(payload) if payload else ("report", "male")
+            filename = _safe_filename(name)
 
         disposition = "attachment" if force_download else "inline"
         self.send_response(200)

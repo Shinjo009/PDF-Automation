@@ -46,3 +46,11 @@ _load_module(
     "modules.bioai_report.pdf_renderer.report_store",
     ROOT / "pdf_renderer" / "report_store.py",
 )
+_load_module(
+    "modules.bioai_report.pdf_renderer.exceptions",
+    ROOT / "pdf_renderer" / "exceptions.py",
+)
+_load_module(
+    "modules.bioai_report.pdf_renderer.greeting_cards",
+    ROOT / "pdf_renderer" / "greeting_cards.py",
+)
