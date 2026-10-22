@@ -58,9 +58,12 @@ def test_unknown_occasion_rejected():
 def test_build_card_html_uses_local_background():
     card = validate_card_payload(SAMPLE)
     html = build_card_html(card)
-    assert "Dear Rohan" in html
+    assert "Rohan" in html
+    assert "FOR SISTER" in html
+    assert "MANY HAPPY RETURNS" in html
     assert "Wishing you a beautiful celebration." in html
     assert "birthday.png" in html
+    assert "logo_ring.svg" in html
     assert "figma.com" not in html
 
 

@@ -36,9 +36,48 @@ _TITLES = {
     "diwali": "Happy Diwali",
 }
 
-# Figma frames are landscape invitation cards (~400×260). Print at 7.5×5 in.
+# Figma groups 864:14085 / 864:14037 / 856:12325. Print at 7.5×5 in.
 CARD_PAGE_WIDTH = "7.5in"
 CARD_PAGE_HEIGHT = "5in"
+_PAGE_CSS_WIDTH = 720  # 7.5in at 96px/in
+_PAGE_CSS_HEIGHT = 480  # 5in at 96px/in
+
+# Pixel layout from the Figma card groups (background + text overlay).
+_LAYOUTS = {
+    "gift": {
+        "width": 396,
+        "height": 254,
+        "greeting": "THANK YOU",
+        "copy_left": 37,
+        "copy_top": 13,
+        "copy_width": 338,
+        "header_width": 338,
+        "body_width": 270,
+        "body_height": 168,
+    },
+    "birthday": {
+        "width": 400,
+        "height": 267,
+        "greeting": "MANY HAPPY RETURNS",
+        "copy_left": 28,
+        "copy_top": 21,
+        "copy_width": 310,
+        "header_width": 288,
+        "body_width": 210,
+        "body_height": 168,
+    },
+    "diwali": {
+        "width": 391,
+        "height": 260,
+        "greeting": "SHUBH DEEPAVALI",
+        "copy_left": 28,
+        "copy_top": 15,
+        "copy_width": 310,
+        "header_width": 310,
+        "body_width": 205,
+        "body_height": 168,
+    },
+}
 
 
 def normalize_card_type(occasion: str) -> str:
@@ -98,21 +137,39 @@ def is_card_payload(payload: dict[str, Any] | None) -> bool:
     return isinstance(payload, dict) and payload.get("kind") == CARD_KIND
 
 
-def card_background_uri(card_type: str) -> str:
-    path = _STATIC_DIR / "assets" / "greeting_cards" / f"{card_type}.png"
+def _card_asset_uri(name: str) -> str:
+    path = _STATIC_DIR / "assets" / "greeting_cards" / name
     if not path.is_file():
-        raise PdfValidationError(f"Missing greeting-card background: {path.name}")
+        raise PdfValidationError(f"Missing greeting-card asset: {name}")
     return path.resolve().as_uri()
 
 
+def card_background_uri(card_type: str) -> str:
+    return _card_asset_uri(f"{card_type}.png")
+
+
+def _for_label(relation: str) -> str:
+    text = (relation or "").strip()
+    if text.upper().startswith("FOR "):
+        return text.upper()
+    return f"FOR {text.upper()}"
+
+
 def build_card_html(card: dict[str, str]) -> str:
-    bg = card_background_uri(card["card_type"])
+    card_type = card["card_type"]
+    layout = _LAYOUTS[card_type]
+    scale = min(_PAGE_CSS_WIDTH / layout["width"], _PAGE_CSS_HEIGHT / layout["height"])
+    bg = card_background_uri(card_type)
+    logo_ring = _card_asset_uri("logo_ring.svg")
+    logo_ring2 = _card_asset_uri("logo_ring2.svg")
+    logo_word = _card_asset_uri("logo_word.svg")
+    logo_mark = _card_asset_uri("logo_mark.svg")
     title = html.escape(card["title"])
     receiver = html.escape(card["receiver_name"])
     sender = html.escape(card["sender_name"])
-    relation = html.escape(card["relation"])
+    greeting = html.escape(layout["greeting"])
+    for_label = html.escape(_for_label(card["relation"]))
     message = html.escape(card["message"]).replace("\n", "<br />")
-    align = "center" if card["card_type"] == "gift" else "left"
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -120,7 +177,7 @@ def build_card_html(card: dict[str, str]) -> str:
   <title>{title}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=DM+Serif+Display:ital@0;1&family=Great+Vibes&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,700&family=Lato:wght@400&display=swap" rel="stylesheet" />
   <style>
     @page {{ size: {CARD_PAGE_WIDTH} {CARD_PAGE_HEIGHT}; margin: 0; }}
     html, body {{
@@ -129,14 +186,23 @@ def build_card_html(card: dict[str, str]) -> str:
       width: {CARD_PAGE_WIDTH};
       height: {CARD_PAGE_HEIGHT};
       overflow: hidden;
-      background: #f7f1e4;
+      background: #fffaf2;
+    }}
+    .stage {{
+      width: {CARD_PAGE_WIDTH};
+      height: {CARD_PAGE_HEIGHT};
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }}
     .card {{
       position: relative;
-      width: {CARD_PAGE_WIDTH};
-      height: {CARD_PAGE_HEIGHT};
+      width: {layout["width"]}px;
+      height: {layout["height"]}px;
+      transform: scale({scale:.4f});
+      transform-origin: center center;
       overflow: hidden;
-      border-radius: 0;
+      border-radius: 20px;
     }}
     .card__bg {{
       position: absolute;
@@ -148,84 +214,135 @@ def build_card_html(card: dict[str, str]) -> str:
     }}
     .card__copy {{
       position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
+      left: {layout["copy_left"]}px;
+      top: {layout["copy_top"]}px;
+      width: {layout["copy_width"]}px;
       z-index: 2;
-      color: #3d2f1c;
-      text-align: {align};
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
     }}
-    .card--gift .card__copy {{
-      left: 12%;
-      right: 12%;
+    .card__header {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: {layout["header_width"]}px;
     }}
-    .card--birthday .card__copy,
-    .card--diwali .card__copy {{
-      left: 8%;
-      width: 48%;
+    .card__logo {{
+      position: relative;
+      width: 37.143px;
+      height: 37.048px;
+      overflow: hidden;
+      flex-shrink: 0;
     }}
-    .card__kicker {{
-      margin: 0 0 8px;
-      font-family: "Cormorant Garamond", "Times New Roman", serif;
-      font-size: 13px;
-      letter-spacing: 0.28em;
-      text-transform: uppercase;
-      color: #8a7348;
+    .card__logo img {{
+      position: absolute;
+      display: block;
     }}
-    .card__title {{
-      margin: 0 0 16px;
-      font-family: "Great Vibes", "DM Serif Display", cursive;
-      font-size: 46px;
+    .card__logo-ring {{
+      top: 0.26px;
+      left: 0.23px;
+    }}
+    .card__logo-word {{
+      top: 13.89px;
+      left: 5.54px;
+    }}
+    .card__logo-mark {{
+      top: 1.67px;
+      left: 0.81px;
+    }}
+    .card__greeting {{
+      margin: 0;
+      padding: 10px;
+      font-family: "DM Sans", "Helvetica Neue", sans-serif;
+      font-size: 10px;
       font-weight: 400;
-      line-height: 1.05;
-      color: #1f3a2e;
+      font-variation-settings: "opsz" 14;
+      letter-spacing: 4px;
+      line-height: 30px;
+      color: #720b0b;
+      white-space: nowrap;
     }}
-    .card--birthday .card__title,
-    .card--diwali .card__title {{
-      color: #6b4e16;
+    .card__body {{
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      width: {layout["body_width"]}px;
+      min-height: {layout["body_height"]}px;
     }}
-    .card__to {{
-      margin: 0 0 12px;
-      font-family: "Cormorant Garamond", "Times New Roman", serif;
-      font-size: 18px;
-      font-style: italic;
-      color: #4a3b24;
+    .card__top {{
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }}
+    .card__for {{
+      margin: 0;
+      font-family: "DM Sans", "Helvetica Neue", sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      font-variation-settings: "opsz" 14;
+      letter-spacing: 2.5px;
+      line-height: 30px;
+      color: #720b0b;
+      white-space: nowrap;
+    }}
+    .card__name {{
+      margin: 0;
+      font-family: "DM Sans", "Helvetica Neue", sans-serif;
+      font-size: 30px;
+      font-weight: 700;
+      font-variation-settings: "opsz" 14;
+      letter-spacing: 0.9px;
+      line-height: 30px;
+      color: #000000;
     }}
     .card__message {{
-      margin: 0 0 22px;
-      font-family: "Cormorant Garamond", "Times New Roman", serif;
-      font-size: 16px;
-      line-height: 1.45;
-      word-spacing: 0.06em;
-      color: #3d2f1c;
-    }}
-    .card__from {{
       margin: 0;
-      font-family: "DM Serif Display", "Times New Roman", serif;
-      font-size: 18px;
-      color: #1f3a2e;
+      font-family: "Lato", "Helvetica Neue", sans-serif;
+      font-size: 15px;
+      font-weight: 400;
+      letter-spacing: 0.3px;
+      line-height: 30px;
+      color: #424242;
     }}
-    .card__relation {{
-      margin: 4px 0 0;
-      font-family: "Cormorant Garamond", "Times New Roman", serif;
-      font-size: 13px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #8a7348;
+    .card__sender {{
+      margin: 0;
+      font-family: "Lato", "Helvetica Neue", sans-serif;
+      font-size: 15px;
+      font-weight: 400;
+      letter-spacing: 0.3px;
+      line-height: 30px;
+      color: #424242;
     }}
   </style>
 </head>
 <body>
-  <section class="card card--{html.escape(card['card_type'])}">
-    <img class="card__bg" src="{bg}" alt="" />
-    <div class="card__copy">
-      <p class="card__kicker">{html.escape(card['card_type'])}</p>
-      <h1 class="card__title">{title}</h1>
-      <p class="card__to">Dear {receiver},</p>
-      <p class="card__message">{message}</p>
-      <p class="card__from">{sender}</p>
-      <p class="card__relation">{relation}</p>
-    </div>
-  </section>
+  <div class="stage">
+    <section class="card card--{html.escape(card_type)}">
+      <img class="card__bg" src="{bg}" alt="" />
+      <div class="card__copy">
+        <header class="card__header">
+          <div class="card__logo" aria-hidden="true">
+            <img class="card__logo-ring" src="{logo_ring}" alt="" />
+            <img class="card__logo-word" src="{logo_word}" alt="" />
+            <img class="card__logo-ring" src="{logo_ring2}" alt="" />
+            <img class="card__logo-word" src="{logo_word}" alt="" />
+            <img class="card__logo-mark" src="{logo_mark}" alt="" />
+          </div>
+          <p class="card__greeting">{greeting}</p>
+        </header>
+        <div class="card__body">
+          <div class="card__top">
+            <p class="card__for">{for_label}</p>
+            <h1 class="card__name">{receiver}</h1>
+            <p class="card__message">{message}</p>
+          </div>
+          <p class="card__sender">{sender}</p>
+        </div>
+      </div>
+    </section>
+  </div>
 </body>
 </html>
 """
