@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="{{ disease_detail_css_href }}" />
   <link rel="stylesheet" href="{{ health_trends_divider_css_href }}" />
   <link rel="stylesheet" href="{{ health_trends_css_href }}" />
+  <link rel="stylesheet" href="{{ allergy_cancer_divider_css_href }}" />
   <link rel="stylesheet" href="{{ back_cover_css_href }}" />
 </head>
 <body class="{% if for_http %}preview-mode{% endif %}">
@@ -70,6 +71,13 @@
   {% include "pages/disease_detail.html" %}
   {% endif %}
   {% endfor %}
+
+  {# Allergy / Cancer (optional) — after Lifestyle Diseases Risk Analysis; only if JSON has allergy or cancer #}
+  {% if vm.has_allergy_cancer %}
+  {% if show_all or only in ['AllergyCancerDivider', 'allergy_cancer_divider'] or only == (allergy_cancer_divider_page_no|string) %}
+  {% include "pages/allergy_cancer_divider.html" %}
+  {% endif %}
+  {% endif %}
 
   {# Health Trends (optional) — after Lifestyle Diseases Risk Analysis; only if JSON has health_trends #}
   {% if vm.has_health_trends %}

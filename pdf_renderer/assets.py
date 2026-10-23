@@ -326,6 +326,21 @@ def back_cover_asset_urls(*, for_http: bool = False) -> dict[str, str]:
     }
 
 
+def allergy_cancer_asset_urls(*, for_http: bool = False) -> dict[str, str]:
+    """Return optional allergy/cancer divider asset URLs (Figma 747:1096)."""
+    base_dir = Path(pdf_config.STATIC_DIR) / "assets" / "allergy_cancer"
+
+    def resolve(name: str) -> str:
+        path = base_dir / name
+        if for_http:
+            return f"/static/assets/allergy_cancer/{name}"
+        return path.resolve().as_uri()
+
+    return {
+        "ac_page_bg": resolve("page_bg.png"),
+    }
+
+
 def health_trends_asset_urls(*, for_http: bool = False) -> dict[str, str]:
     """Return Health Trends divider + chart page asset URLs (Figma 373:97955 / 373:97792)."""
     base_dir = Path(pdf_config.STATIC_DIR) / "assets" / "health_trends"
@@ -360,5 +375,6 @@ def page_asset_urls(variant: str = "male", *, for_http: bool = False) -> dict[st
         **disease_divider_asset_urls(for_http=for_http),
         **disease_detail_asset_urls(for_http=for_http),
         **health_trends_asset_urls(for_http=for_http),
+        **allergy_cancer_asset_urls(for_http=for_http),
         **back_cover_asset_urls(for_http=for_http),
     }
