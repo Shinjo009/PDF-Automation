@@ -189,6 +189,9 @@ class PdfViewModel:
     health_trend_series: list[TrendSeriesVM] = field(default_factory=list)
     health_trends_page_range: str = ""
     health_trends_chart_page_count: int = 0
+    has_allergy_cancer: bool = False
+    allergy_cancer_page_range: str = ""
+    allergy_cancer_page_count: int = 0
 
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
@@ -437,14 +440,24 @@ def build_pdf_view_model(report: BioReport) -> PdfViewModel:
     )
     # Divider (1) + chart pages when trends exist
     trend_extra = (1 + trend_chart_pages) if has_trends else 0
+    has_allergy_cancer = report.allergy is not None or report.cancer is not None
+    # Divider only for now; later allergy/cancer content pages increment this.
+    allergy_cancer_extra = 1 if has_allergy_cancer else 0
 
     # Front matter: cover, welcome, TOC, index, health, glance, risks, divider (8),
-    # then disease details, optional Health Trends (divider + charts), then back cover.
-    page_count = 8 + len(disease_pages) + trend_extra + 1
+    # then disease details, optional allergy/cancer, optional Health Trends, then back cover.
+    page_count = 8 + len(disease_pages) + allergy_cancer_extra + trend_extra + 1
     disease_start = 9
     disease_end = 8 + len(disease_pages)
-    trends_start = disease_end + 1 if has_trends else 0
-    trends_end = disease_end + trend_extra if has_trends else 0
+    allergy_cancer_start = disease_end + 1 if has_allergy_cancer else 0
+    allergy_cancer_end = disease_end + allergy_cancer_extra if has_allergy_cancer else 0
+    allergy_cancer_range = (
+        f"{allergy_cancer_start}"
+        if allergy_cancer_start == allergy_cancer_end
+        else f"{allergy_cancer_start}-{allergy_cancer_end}"
+    )
+    trends_start = (disease_end + allergy_cancer_extra + 1) if has_trends else 0
+    trends_end = (disease_end + allergy_cancer_extra + trend_extra) if has_trends else 0
     trends_range = (
         f"{trends_start}"
         if trends_start == trends_end
@@ -492,6 +505,9 @@ def build_pdf_view_model(report: BioReport) -> PdfViewModel:
         health_trend_series=trend_series,
         health_trends_page_range=trends_range,
         health_trends_chart_page_count=trend_chart_pages,
+        has_allergy_cancer=has_allergy_cancer,
+        allergy_cancer_page_range=allergy_cancer_range,
+        allergy_cancer_page_count=allergy_cancer_extra,
     )
     validate_view_model(report, vm)
     return vm

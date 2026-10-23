@@ -221,6 +221,24 @@ def test_bioreport_fixtures_build_view_models():
             assert page.score == int(source.current_status.score)
 
 
+def test_allergy_cancer_divider_only_when_json_has_section(sample_report: BioReport):
+    vm = build_pdf_view_model(sample_report)
+    html = build_report_html(vm)
+    assert vm.has_allergy_cancer is False
+    assert "AllergyCancerDivider" not in html
+
+    payload = sample_report.to_dict()
+    payload["allergy"] = {"items": []}
+    with_allergy = BioReport.model_validate(payload)
+    vm_allergy = build_pdf_view_model(with_allergy)
+    html_allergy = build_report_html(vm_allergy)
+    assert vm_allergy.has_allergy_cancer is True
+    assert vm_allergy.allergy_cancer_page_count == 1
+    assert vm_allergy.page_count == vm.page_count + 1
+    assert "AllergyCancerDivider" in html_allergy
+    assert 'data-node-id="747:1096"' in html_allergy
+
+
 def test_pdf_bytes_optional(user1_report: BioReport):
     """If Playwright+Chromium are available, PDF must start with %PDF."""
     pytest.importorskip("playwright")

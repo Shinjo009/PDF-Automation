@@ -193,6 +193,18 @@ class HealthTrends(BaseModel):
     series: list[TrendSeries] = Field(default_factory=list)
 
 
+class AllergySection(BaseModel):
+    """Optional allergy block. Presence of this object inserts allergy pages."""
+
+    model_config = ConfigDict(extra="allow")
+
+
+class CancerSection(BaseModel):
+    """Optional cancer block. Presence of this object inserts cancer pages."""
+
+    model_config = ConfigDict(extra="allow")
+
+
 class BioReport(BaseModel):
     """Finished report JSON accepted by the PDF + permanent-link service."""
 
@@ -202,6 +214,8 @@ class BioReport(BaseModel):
     executive_summary: ExecutiveSummary
     disease_sections: list[DiseaseSection] = Field(default_factory=list)
     health_trends: HealthTrends | None = None
+    allergy: AllergySection | None = None
+    cancer: CancerSection | None = None
     report_metadata: ReportMetadata
 
     def to_dict(self) -> dict[str, Any]:

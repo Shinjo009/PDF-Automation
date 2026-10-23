@@ -385,8 +385,8 @@ def _health_trends_pages(vm: PdfViewModel) -> list[dict[str, object]]:
     if not vm.has_health_trends or not vm.health_trend_series:
         return []
     disease_end = 8 + len(vm.disease_pages)
-    # page disease_end+1 is the Health Trends divider
-    first_chart_page = disease_end + 2
+    # Optional allergy/cancer pages sit between disease details and Health Trends.
+    first_chart_page = disease_end + vm.allergy_cancer_page_count + 2
     pages: list[dict[str, object]] = []
     series = list(vm.health_trend_series)
     for page_index in range(0, len(series), _TRENDS_PER_PAGE):
@@ -460,6 +460,16 @@ def build_report_html(
             "dynamic_pages": True,
         },
     ]
+    if vm.has_allergy_cancer:
+        toc_rows.append(
+            {
+                "id": "allergy_cancer",
+                "sr": f"{len(toc_rows) + 1:02d}",
+                "section": "Lifestyle Diseases Risk Analysis",
+                "page": vm.allergy_cancer_page_range,
+                "dynamic_pages": True,
+            }
+        )
     if vm.has_health_trends:
         toc_rows.append(
             {
@@ -471,7 +481,12 @@ def build_report_html(
             }
         )
     disease_end = 8 + len(vm.disease_pages)
-    ht_divider_page_no = disease_end + 1 if vm.has_health_trends else 0
+    allergy_cancer_divider_page_no = (
+        disease_end + 1 if vm.has_allergy_cancer else 0
+    )
+    ht_divider_page_no = (
+        disease_end + vm.allergy_cancer_page_count + 1 if vm.has_health_trends else 0
+    )
     assets = page_asset_urls(vm.variant, for_http=for_http)
     template = _env().get_template("report.html")
     return template.render(
@@ -490,6 +505,9 @@ def build_report_html(
             "health_trends_divider.css", for_http=for_http
         ),
         health_trends_css_href=_css_href("health_trends.css", for_http=for_http),
+        allergy_cancer_divider_css_href=_css_href(
+            "allergy_cancer_divider.css", for_http=for_http
+        ),
         back_cover_css_href=_css_href("back_cover.css", for_http=for_http),
         status_color=risk_color(vm.overall_status),
         assets=assets,
@@ -499,6 +517,7 @@ def build_report_html(
         disease_detail_pages=_disease_detail_pages(vm),
         health_trends_pages=_health_trends_pages(vm),
         ht_divider_page_no=ht_divider_page_no,
+        allergy_cancer_divider_page_no=allergy_cancer_divider_page_no,
         toc_rows=toc_rows,
         preview_page=page,
         for_http=for_http,

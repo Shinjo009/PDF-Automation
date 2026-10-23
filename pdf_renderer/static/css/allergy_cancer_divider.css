@@ -1,0 +1,52 @@
+/* Allergy / Cancer divider — Figma node 747:1096 (595×842)
+   Uses a full-page Figma export so decorative leaves and glow blend correctly.
+   Only the page number is dynamic.
+*/
+
+.page.ac-div-figma,
+.ac-div-figma {
+  width: 595px;
+  height: 842px;
+  padding: 0;
+  margin: 0 auto;
+  background: #061c1a;
+  color: #ffffff;
+  overflow: hidden;
+  position: relative;
+  page-break-after: always;
+  font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+}
+
+.ac-div-figma__bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ac-div-figma__bg-img {
+  position: absolute;
+  inset: 0;
+  width: 595px;
+  height: 842px;
+  max-width: none;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.ac-div-figma__page-no {
+  position: absolute;
+  left: 50%;
+  top: 794px;
+  transform: translateX(-50%);
+  z-index: 2;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: normal;
+  color: #ffffff;
+  text-align: center;
+  white-space: nowrap;
+}
