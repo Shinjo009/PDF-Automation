@@ -52,7 +52,8 @@ _LAYOUTS = {
         "copy_top": 13,
         "copy_width": 338,
         "header_width": 338,
-        "body_width": 270,
+        "body_width": 194,
+        "name_width": 338,
         "body_height": 168,
     },
     "birthday": {
@@ -63,7 +64,8 @@ _LAYOUTS = {
         "copy_top": 21,
         "copy_width": 310,
         "header_width": 288,
-        "body_width": 210,
+        "body_width": 194,
+        "name_width": 250,
         "body_height": 168,
     },
     "diwali": {
@@ -74,7 +76,8 @@ _LAYOUTS = {
         "copy_top": 15,
         "copy_width": 310,
         "header_width": 310,
-        "body_width": 205,
+        "body_width": 194,
+        "name_width": 250,
         "body_height": 168,
     },
 }
@@ -155,10 +158,45 @@ def _for_label(relation: str) -> str:
     return f"FOR {text.upper()}"
 
 
+def _print_layout(card_type: str) -> dict[str, float | str]:
+    """Scale Figma px to print size. Avoid CSS transform:scale — Chromium
+    PDF wraps text against the unscaled box and the printed card diverges
+    from the website preview."""
+    src = _LAYOUTS[card_type]
+    scale = min(_PAGE_CSS_WIDTH / src["width"], _PAGE_CSS_HEIGHT / src["height"])
+    return {
+        "greeting": src["greeting"],
+        "scale": scale,
+        "width": src["width"] * scale,
+        "height": src["height"] * scale,
+        "radius": 20 * scale,
+        "copy_left": src["copy_left"] * scale,
+        "copy_top": src["copy_top"] * scale,
+        "copy_width": src["copy_width"] * scale,
+        "header_width": src["header_width"] * scale,
+        "body_width": src["body_width"] * scale,
+        "name_width": src["name_width"] * scale,
+        "body_height": src["body_height"] * scale,
+        "gap": 8 * scale,
+        "logo": 37.143 * scale,
+        "greeting_size": 10 * scale,
+        "greeting_tracking": 4 * scale,
+        "greeting_lh": 18 * scale,
+        "for_size": 10 * scale,
+        "for_tracking": 2.5 * scale,
+        "for_lh": 18 * scale,
+        "name_size": 30 * scale,
+        "name_tracking": 0.9 * scale,
+        "name_lh": 34 * scale,
+        "msg_size": 15 * scale,
+        "msg_tracking": 0.3 * scale,
+        "msg_lh": 20 * scale,
+    }
+
+
 def build_card_html(card: dict[str, str]) -> str:
     card_type = card["card_type"]
-    layout = _LAYOUTS[card_type]
-    scale = min(_PAGE_CSS_WIDTH / layout["width"], _PAGE_CSS_HEIGHT / layout["height"])
+    layout = _print_layout(card_type)
     bg = card_background_uri(card_type)
     logo_ring = _card_asset_uri("logo_ring.svg")
     logo_ring2 = _card_asset_uri("logo_ring2.svg")
@@ -167,9 +205,9 @@ def build_card_html(card: dict[str, str]) -> str:
     title = html.escape(card["title"])
     receiver = html.escape(card["receiver_name"])
     sender = html.escape(card["sender_name"])
-    greeting = html.escape(layout["greeting"])
+    greeting = html.escape(str(layout["greeting"]))
     for_label = html.escape(_for_label(card["relation"]))
-    message = html.escape(card["message"]).replace("\n", "<br />")
+    message = html.escape(card["message"]).replace("\r\n", "\n").replace("\r", "\n")
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -177,7 +215,7 @@ def build_card_html(card: dict[str, str]) -> str:
   <title>{title}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,700&family=Lato:wght@400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=Lato:wght@400&display=swap" rel="stylesheet" />
   <style>
     @page {{ size: {CARD_PAGE_WIDTH} {CARD_PAGE_HEIGHT}; margin: 0; }}
     html, body {{
@@ -197,12 +235,10 @@ def build_card_html(card: dict[str, str]) -> str:
     }}
     .card {{
       position: relative;
-      width: {layout["width"]}px;
-      height: {layout["height"]}px;
-      transform: scale({scale:.4f});
-      transform-origin: center center;
+      width: {layout["width"]:.2f}px;
+      height: {layout["height"]:.2f}px;
       overflow: hidden;
-      border-radius: 20px;
+      border-radius: {layout["radius"]:.2f}px;
     }}
     .card__bg {{
       position: absolute;
@@ -214,27 +250,33 @@ def build_card_html(card: dict[str, str]) -> str:
     }}
     .card__copy {{
       position: absolute;
-      left: {layout["copy_left"]}px;
-      top: {layout["copy_top"]}px;
-      width: {layout["copy_width"]}px;
+      left: {layout["copy_left"]:.2f}px;
+      top: {layout["copy_top"]:.2f}px;
+      width: {layout["copy_width"]:.2f}px;
       z-index: 2;
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      gap: 8px;
+      gap: {layout["gap"]:.2f}px;
     }}
     .card__header {{
       display: flex;
       align-items: center;
       justify-content: space-between;
-      width: {layout["header_width"]}px;
+      width: {layout["header_width"]:.2f}px;
     }}
     .card__logo {{
+      width: {layout["logo"]:.2f}px;
+      height: {layout["logo"]:.2f}px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }}
+    .card__logo-inner {{
       position: relative;
       width: 37.143px;
       height: 37.048px;
-      overflow: hidden;
-      flex-shrink: 0;
+      transform: scale({float(layout["logo"]) / 37.143:.4f});
+      transform-origin: top left;
     }}
     .card__logo img {{
       position: absolute;
@@ -254,22 +296,19 @@ def build_card_html(card: dict[str, str]) -> str:
     }}
     .card__greeting {{
       margin: 0;
-      padding: 10px;
       font-family: "DM Sans", "Helvetica Neue", sans-serif;
-      font-size: 10px;
+      font-size: {layout["greeting_size"]:.2f}px;
       font-weight: 400;
-      font-variation-settings: "opsz" 14;
-      letter-spacing: 4px;
-      line-height: 30px;
+      letter-spacing: {layout["greeting_tracking"]:.2f}px;
+      line-height: {layout["greeting_lh"]:.2f}px;
       color: #720b0b;
       white-space: nowrap;
     }}
     .card__body {{
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      width: {layout["body_width"]}px;
-      min-height: {layout["body_height"]}px;
+      width: {layout["name_width"]:.2f}px;
+      min-height: {layout["body_height"]:.2f}px;
     }}
     .card__top {{
       display: flex;
@@ -279,40 +318,46 @@ def build_card_html(card: dict[str, str]) -> str:
     .card__for {{
       margin: 0;
       font-family: "DM Sans", "Helvetica Neue", sans-serif;
-      font-size: 10px;
+      font-size: {layout["for_size"]:.2f}px;
       font-weight: 700;
-      font-variation-settings: "opsz" 14;
-      letter-spacing: 2.5px;
-      line-height: 30px;
+      letter-spacing: {layout["for_tracking"]:.2f}px;
+      line-height: {layout["for_lh"]:.2f}px;
       color: #720b0b;
       white-space: nowrap;
     }}
     .card__name {{
       margin: 0;
+      width: {layout["name_width"]:.2f}px;
       font-family: "DM Sans", "Helvetica Neue", sans-serif;
-      font-size: 30px;
+      font-size: {layout["name_size"]:.2f}px;
       font-weight: 700;
-      font-variation-settings: "opsz" 14;
-      letter-spacing: 0.9px;
-      line-height: 30px;
+      letter-spacing: {layout["name_tracking"]:.2f}px;
+      line-height: {layout["name_lh"]:.2f}px;
       color: #000000;
+      white-space: nowrap;
     }}
     .card__message {{
-      margin: 0;
+      margin: 4px 0 0;
+      width: {layout["body_width"]:.2f}px;
       font-family: "Lato", "Helvetica Neue", sans-serif;
-      font-size: 15px;
+      font-size: {layout["msg_size"]:.2f}px;
       font-weight: 400;
-      letter-spacing: 0.3px;
-      line-height: 30px;
+      letter-spacing: {layout["msg_tracking"]:.2f}px;
+      line-height: {layout["msg_lh"]:.2f}px;
       color: #424242;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
     }}
     .card__sender {{
       margin: 0;
+      padding-top: {layout["gap"]:.2f}px;
+      margin-top: auto;
       font-family: "Lato", "Helvetica Neue", sans-serif;
-      font-size: 15px;
+      font-size: {layout["msg_size"]:.2f}px;
       font-weight: 400;
-      letter-spacing: 0.3px;
-      line-height: 30px;
+      letter-spacing: {layout["msg_tracking"]:.2f}px;
+      line-height: {layout["msg_lh"]:.2f}px;
       color: #424242;
     }}
   </style>
@@ -324,11 +369,13 @@ def build_card_html(card: dict[str, str]) -> str:
       <div class="card__copy">
         <header class="card__header">
           <div class="card__logo" aria-hidden="true">
-            <img class="card__logo-ring" src="{logo_ring}" alt="" />
-            <img class="card__logo-word" src="{logo_word}" alt="" />
-            <img class="card__logo-ring" src="{logo_ring2}" alt="" />
-            <img class="card__logo-word" src="{logo_word}" alt="" />
-            <img class="card__logo-mark" src="{logo_mark}" alt="" />
+            <div class="card__logo-inner">
+              <img class="card__logo-ring" src="{logo_ring}" alt="" />
+              <img class="card__logo-word" src="{logo_word}" alt="" />
+              <img class="card__logo-ring" src="{logo_ring2}" alt="" />
+              <img class="card__logo-word" src="{logo_word}" alt="" />
+              <img class="card__logo-mark" src="{logo_mark}" alt="" />
+            </div>
           </div>
           <p class="card__greeting">{greeting}</p>
         </header>

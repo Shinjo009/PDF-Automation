@@ -64,7 +64,25 @@ def test_build_card_html_uses_local_background():
     assert "Wishing you a beautiful celebration." in html
     assert "birthday.png" in html
     assert "logo_ring.svg" in html
+    assert "white-space: pre-wrap" in html
+    assert ".card__name" in html
+    assert "white-space: nowrap" in html
+    assert "transform: scale(" not in html.split(".card__logo-inner")[0]
     assert "figma.com" not in html
+
+
+def test_message_keeps_typed_line_breaks():
+    card = validate_card_payload(
+        {
+            **SAMPLE,
+            "receiver_name": "Harshili Gada",
+            "message": "heyaaaa what you doing..\nhappy diwali yoooooo meet soonhhh",
+            "occasion": "diwali",
+        }
+    )
+    html = build_card_html(card)
+    assert "heyaaaa what you doing..\nhappy diwali yoooooo meet soonhhh" in html
+    assert "<br" not in html
 
 
 def test_is_card_payload():
