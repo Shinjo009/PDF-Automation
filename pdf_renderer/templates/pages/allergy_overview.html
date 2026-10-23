@@ -1,0 +1,114 @@
+{# Allergy Sensitivity Overview — Figma node 747:5202; values from allergy JSON #}
+<section
+  class="page ao-figma"
+  data-template="AllergyOverview"
+  data-page="{{ vm.allergy.page_no }}"
+  data-node-id="747:5202"
+>
+  <h1 class="ao-figma__title">Allergy Sensitivity Overview</h1>
+  <img class="ao-figma__title-line" src="{{ assets.ao_title_line }}" alt="" aria-hidden="true" />
+
+  <article class="ao-figma__ige-card">
+    <h2 class="ao-figma__h2">What is IgE?</h2>
+    <p class="ao-figma__ige-copy" data-slot="allergy.ige_description">{{ vm.allergy.ige_description }}</p>
+  </article>
+
+  <div class="ao-figma__level">
+    <div class="ao-figma__level-head">
+      <h2 class="ao-figma__h2">Total IgE Level</h2>
+      <p class="ao-figma__ige-value">
+        <span class="ao-figma__ige-num" data-slot="allergy.ige_value">{{ vm.allergy.ige_value }}</span>
+        <span class="ao-figma__ige-unit" data-slot="allergy.ige_unit">{{ vm.allergy.ige_unit }}</span>
+      </p>
+    </div>
+    <div class="ao-figma__gauge" aria-label="IgE {{ vm.allergy.ige_band }}">
+      <div class="ao-figma__gauge-track"></div>
+      <span class="ao-figma__gauge-tick ao-figma__gauge-tick--0"></span>
+      <span class="ao-figma__gauge-tick ao-figma__gauge-tick--1"></span>
+      <span class="ao-figma__gauge-tick ao-figma__gauge-tick--2"></span>
+      <span class="ao-figma__gauge-tick ao-figma__gauge-tick--3"></span>
+      <span class="ao-figma__gauge-tick ao-figma__gauge-tick--4"></span>
+      <span class="ao-figma__gauge-marker" style="left: {{ '%.2f'|format(vm.allergy.marker_left) }}px;"></span>
+      <div class="ao-figma__gauge-labels">
+        <span class="ao-figma__gl ao-figma__gl--low">LOW</span>
+        <span class="ao-figma__gl ao-figma__gl--mod">MODERATE</span>
+        <span class="ao-figma__gl ao-figma__gl--inc">INCREASED</span>
+        <span class="ao-figma__gl ao-figma__gl--high">HIGH</span>
+        <span class="ao-figma__gl ao-figma__gl--vh">VERY HIGH</span>
+      </div>
+    </div>
+  </div>
+
+  <aside class="ao-figma__reco">
+    <p data-slot="allergy.recommendation">
+      <strong>Recommendation:</strong>
+      {{ vm.allergy.recommendation }}
+    </p>
+  </aside>
+
+  <section class="ao-figma__summary">
+    <h2 class="ao-figma__h2">Allergen Screening Summary (ELISA Method)</h2>
+    <div class="ao-figma__stats">
+      <article class="ao-figma__stat">
+        <p class="ao-figma__stat-num ao-figma__stat-num--ink" data-slot="allergy.total_tested">{{ vm.allergy.total_tested }}</p>
+        <p class="ao-figma__stat-label">Total Allergens Tested</p>
+      </article>
+      <article class="ao-figma__stat ao-figma__stat--amber">
+        <p class="ao-figma__stat-num ao-figma__stat-num--amber" data-slot="allergy.sensitive_count">{{ vm.allergy.sensitive_count }}</p>
+        <p class="ao-figma__stat-label">Sensitive Allergens<br />Detected</p>
+      </article>
+      <article class="ao-figma__stat ao-figma__stat--green">
+        <p class="ao-figma__stat-num ao-figma__stat-num--green" data-slot="allergy.normal_count">{{ vm.allergy.normal_count }}</p>
+        <p class="ao-figma__stat-label">Normal / No Reaction</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="ao-figma__table-wrap">
+    <h2 class="ao-figma__h2">Detected Sensitivities</h2>
+    <div class="ao-figma__table" data-slot="allergy.rows">
+      <div class="ao-figma__thead">
+        <span class="ao-figma__th ao-figma__th--name">Allergen</span>
+        <span class="ao-figma__th ao-figma__th--num">Value (IU/mL)</span>
+        <span class="ao-figma__th ao-figma__th--num">Ref range (IU/mL)</span>
+        <span class="ao-figma__th ao-figma__th--num">Risk</span>
+      </div>
+      {% for row in vm.allergy.rows %}
+      <div class="ao-figma__tr">
+        <span class="ao-figma__td ao-figma__td--name">
+          <strong>{{ row.name }}</strong>
+          {% if row.category %}<small>{{ row.category }}</small>{% endif %}
+        </span>
+        <span class="ao-figma__td ao-figma__td--num"><strong>{{ row.value }}</strong></span>
+        <span class="ao-figma__td ao-figma__td--num ao-figma__td--muted">{{ row.ref_range }}</span>
+        <span class="ao-figma__td ao-figma__td--num">
+          <span class="ao-figma__pill ao-figma__pill--{{ row.risk_tone }}">{{ row.risk }}</span>
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="ao-figma__classes">
+    <div><span>Healthy</span><span>&lt; 0.35</span></div>
+    <div><span>Class 1</span><span>0.35 - 0.71</span></div>
+    <div><span>Class 2</span><span>0.72 - 3.59</span></div>
+    <div><span>Class 3</span><span>3.60 - 17.99</span></div>
+    <div><span>Class 4</span><span>18.00 - 49.99</span></div>
+    <div><span>Class 5</span><span>50.00 – 100</span></div>
+    <div><span>Class 6</span><span>&gt; 100</span></div>
+  </div>
+
+  <div class="ao-figma__footer">
+    <div class="ao-figma__footer-inner">
+      <div class="ao-figma__powered">
+        <span>Poweredby</span>
+        <img src="{{ assets.ao_metflux }}" alt="MetFlux Research" />
+      </div>
+      <p class="ao-figma__page-no">{{ "%02d"|format(vm.allergy.page_no) }}</p>
+      <div class="ao-figma__footer-right">
+        <img class="ao-figma__mark" src="{{ assets.ao_mark }}" alt="Metsights" />
+      </div>
+    </div>
+  </div>
+</section>

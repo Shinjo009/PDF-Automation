@@ -1,0 +1,66 @@
+{# Detailed Allergy Insights — Figma node 747:5562; insights/recs/notes from allergy JSON #}
+<section
+  class="page ai-figma"
+  data-template="AllergyInsights"
+  data-page="{{ vm.allergy_insights.page_no }}"
+  data-node-id="747:5562"
+>
+  <h1 class="ai-figma__title">Detailed Allergy Insights</h1>
+  <img class="ai-figma__title-line" src="{{ assets.ai_title_line }}" alt="" aria-hidden="true" />
+
+  <article class="ai-figma__clinical" data-slot="allergy.insights">
+    <div class="ai-figma__star" aria-hidden="true">
+      <img src="{{ assets.ai_star }}" alt="" width="16" height="16" />
+    </div>
+    <div class="ai-figma__clinical-body">
+      <h2 class="ai-figma__clinical-title">Clinical Insights</h2>
+      {% for item in vm.allergy_insights.insights %}
+      <p class="ai-figma__insight">
+        <strong>{{ item.name }}:</strong>
+        {{ item.text }}
+      </p>
+      {% endfor %}
+    </div>
+  </article>
+
+  <h2 class="ai-figma__reco-title" data-slot="allergy.recommendations_title">
+    {{ vm.allergy_insights.recommendations_title }}
+  </h2>
+
+  <div class="ai-figma__reco-grid" data-slot="allergy.recommendations">
+    {% for card in vm.allergy_insights.recommendations %}
+    <article class="ai-figma__reco-card">
+      <h3>{{ card.title }}</h3>
+      <p>{{ card.body }}</p>
+    </article>
+    {% endfor %}
+  </div>
+
+  <aside class="ai-figma__notes" data-slot="allergy.interpretative_notes">
+    <h3 class="ai-figma__notes-title">
+      <img src="{{ assets.ai_info }}" alt="" width="14" height="14" />
+      <span>Important Interpretative Notes</span>
+    </h3>
+    <ul>
+      {% for note in vm.allergy_insights.notes %}
+      <li>
+        <strong>{{ note.title }}</strong>
+        {{ note.text }}
+      </li>
+      {% endfor %}
+    </ul>
+  </aside>
+
+  <div class="ai-figma__footer">
+    <div class="ai-figma__footer-inner">
+      <div class="ai-figma__powered">
+        <span>Poweredby</span>
+        <img src="{{ assets.ao_metflux }}" alt="MetFlux Research" />
+      </div>
+      <p class="ai-figma__page-no">{{ "%02d"|format(vm.allergy_insights.page_no) }}</p>
+      <div class="ai-figma__footer-right">
+        <img class="ai-figma__mark" src="{{ assets.ao_mark }}" alt="Metsights" />
+      </div>
+    </div>
+  </div>
+</section>

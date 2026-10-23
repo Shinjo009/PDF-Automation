@@ -1,0 +1,104 @@
+{# Detailed Cancer Screening — female 747:5865 / male 741:881; values from cancer JSON #}
+<section
+  class="page dcs-figma dcs-figma--{{ vm.cancer_screening.layout }}"
+  data-template="CancerScreening"
+  data-page="{{ vm.cancer_screening.page_no }}"
+  data-node-id="{{ vm.cancer_screening.node_id }}"
+>
+  <h1 class="dcs-figma__title">Detailed Cancer Screening</h1>
+  <img class="dcs-figma__title-line" src="{{ assets.dcs_title_line }}" alt="" aria-hidden="true" />
+
+  <article class="dcs-figma__what">
+    <h2 class="dcs-figma__h2">What is cancer?</h2>
+    <p class="dcs-figma__what-copy" data-slot="cancer.what_is_cancer">{{ vm.cancer_screening.what_is_cancer }}</p>
+  </article>
+
+  <article class="dcs-figma__snapshot">
+    <div
+      class="dcs-figma__donut"
+      style="--pct: {{ '%.2f'|format(vm.cancer_screening.donut_pct) }};"
+      aria-label="{{ vm.cancer_screening.in_range }} of {{ vm.cancer_screening.total }} markers in range"
+    >
+      <div class="dcs-figma__donut-hole">
+        <p class="dcs-figma__donut-num" data-slot="cancer.in_range">
+          {{ vm.cancer_screening.in_range }} / {{ vm.cancer_screening.total }}
+        </p>
+      </div>
+    </div>
+    <span class="dcs-figma__snap-rule" aria-hidden="true"></span>
+    <div class="dcs-figma__snap-copy">
+      <h2 class="dcs-figma__h2" data-slot="cancer.snapshot_title">{{ vm.cancer_screening.snapshot_title }}</h2>
+      <p class="dcs-figma__snap-text">
+        Your <strong>{{ vm.cancer_screening.in_range }}</strong> out of {{ vm.cancer_screening.total }} markers are in range.
+      </p>
+    </div>
+    {% if vm.cancer_screening.highlight_name %}
+    <aside class="dcs-figma__callout" data-slot="cancer.highlight">
+      <div class="dcs-figma__callout-left">
+        <p class="dcs-figma__callout-name">{{ vm.cancer_screening.highlight_name }}</p>
+        {% if vm.cancer_screening.highlight_marker %}
+        <p class="dcs-figma__callout-marker">{{ vm.cancer_screening.highlight_marker }}</p>
+        {% endif %}
+      </div>
+      <span class="dcs-figma__callout-rule" aria-hidden="true"></span>
+      <div class="dcs-figma__callout-right">
+        <p class="dcs-figma__callout-value">{{ vm.cancer_screening.highlight_value }}</p>
+        <p class="dcs-figma__callout-ref">{{ vm.cancer_screening.highlight_ref }}</p>
+      </div>
+    </aside>
+    {% endif %}
+  </article>
+
+  <div class="dcs-figma__grid" data-slot="cancer.markers">
+    {% for marker in vm.cancer_screening.markers %}
+    <article class="dcs-figma__card">
+      <div class="dcs-figma__card-head">
+        <div class="dcs-figma__icon-wrap">
+          <img class="dcs-figma__icon-bg" src="{{ assets.dcs_icon_bg }}" alt="" width="44" height="44" />
+          <img
+            class="dcs-figma__icon dcs-figma__icon--{{ marker.icon }}"
+            src="{{ assets['dcs_icon_' ~ marker.icon] }}"
+            alt=""
+          />
+        </div>
+        <p class="dcs-figma__card-name">{{ marker.name }}</p>
+      </div>
+      <div class="dcs-figma__bar dcs-figma__bar--{{ marker.status }}">
+        {% if marker.status != 'critical' %}
+        <span class="dcs-figma__bar-fill dcs-figma__bar-fill--{{ marker.status }}" style="width: {{ '%.1f'|format(marker.fill_pct) }}%;"></span>
+        {% endif %}
+        <span class="dcs-figma__bar-knob dcs-figma__bar-knob--{{ marker.status }}" style="left: calc({{ '%.1f'|format(marker.fill_pct) }}% - 7px);"></span>
+      </div>
+      <p class="dcs-figma__card-value">{{ marker.value }}</p>
+      <p class="dcs-figma__card-ref">{{ marker.ref }}</p>
+    </article>
+    {% endfor %}
+  </div>
+
+  <article class="dcs-figma__insight">
+    <img class="dcs-figma__insight-icon" src="{{ assets.dcs_insight }}" alt="" width="29" height="29" />
+    <h3 class="dcs-figma__insight-title" data-slot="cancer.insight_title">{{ vm.cancer_screening.insight_title }}</h3>
+    <p class="dcs-figma__insight-copy" data-slot="cancer.insight">
+      {{ vm.cancer_screening.insight_lead }}{% if vm.cancer_screening.insight_emphasis %}<strong>{{ vm.cancer_screening.insight_emphasis }}</strong>{% endif %}{{ vm.cancer_screening.insight_tail }}
+    </p>
+  </article>
+
+  <div class="dcs-figma__legend">
+    <span><i class="dcs-figma__dot dcs-figma__dot--optimal"></i>Optimal</span>
+    <span><i class="dcs-figma__dot dcs-figma__dot--marginal"></i>Marginal</span>
+    <span><i class="dcs-figma__dot dcs-figma__dot--critical"></i>Critical</span>
+  </div>
+
+  <div class="dcs-figma__footer">
+    <div class="dcs-figma__footer-inner">
+      <div class="dcs-figma__powered">
+        <span>Poweredby</span>
+        <img src="{{ assets.ao_metflux }}" alt="MetFlux Research" />
+      </div>
+      <p class="dcs-figma__page-no">{{ "%02d"|format(vm.cancer_screening.page_no) }}</p>
+      <div class="dcs-figma__footer-right">
+        <img class="dcs-figma__mark" src="{{ assets.ao_mark }}" alt="Metsights" />
+      </div>
+    </div>
+  </div>
+</section>

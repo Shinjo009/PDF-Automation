@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class PatientInfo(BaseModel):
@@ -193,16 +193,210 @@ class HealthTrends(BaseModel):
     series: list[TrendSeries] = Field(default_factory=list)
 
 
+class AllergySensitivity(BaseModel):
+    """One detected allergen row on the Allergy Sensitivity Overview page."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    name: str
+    category: str = ""
+    value: float | str | None = None
+    ref_range: str = "<0.35"
+    risk: str = ""
+
+
+class AllergyCategory(BaseModel):
+    """One category card on Detailed Allergy Breakdown (Figma 747:5335)."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    name: str
+    id: str = ""
+    status: str = "Normal"
+    items: list[str] = Field(default_factory=list)
+
+    @field_validator("items", mode="before")
+    @classmethod
+    def _coerce_items(cls, value: Any) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, str):
+            return [part.strip() for part in value.replace(";", ",").split(",") if part.strip()]
+        if isinstance(value, list):
+            out: list[str] = []
+            for item in value:
+                if isinstance(item, str) and item.strip():
+                    out.append(item.strip())
+                elif isinstance(item, dict) and item.get("name"):
+                    out.append(str(item["name"]).strip())
+            return out
+        return []
+
+
+class AllergyInsight(BaseModel):
+    """One clinical-insight paragraph on Detailed Allergy Insights."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    name: str
+    text: str = ""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _alias_text(cls, data: Any) -> Any:
+        if isinstance(data, dict) and not data.get("text"):
+            data = dict(data)
+            data["text"] = data.get("insight") or data.get("description") or ""
+        return data
+
+
+class AllergyRecommendationCard(BaseModel):
+    """One recommendation tile on Detailed Allergy Insights."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    title: str
+    body: str = ""
+
+
+class AllergyNote(BaseModel):
+    """One interpretative note on Detailed Allergy Insights."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    title: str
+    text: str = ""
+
+
 class AllergySection(BaseModel):
     """Optional allergy block. Presence of this object inserts allergy pages."""
 
     model_config = ConfigDict(extra="allow")
+
+    total_ige: float | None = None
+    ige_unit: str = "IU/ml"
+    ige_ref_low: float = 1.5
+    ige_ref_high: float = 158.0
+    ige_band: str | None = None
+    recommendation: str | None = None
+    ige_description: str | None = None
+    total_allergens_tested: str | int | None = None
+    sensitive_count: int | None = None
+    normal_count: str | int | None = None
+    sensitivities: list[AllergySensitivity] = Field(default_factory=list)
+    normal_categories: list[AllergyCategory] = Field(default_factory=list)
+    breakdown_subtitle: str | None = None
+    breakdown_intro: str | None = None
+    insights: list[AllergyInsight] = Field(default_factory=list)
+    recommendations_title: str | None = None
+    recommendations: list[AllergyRecommendationCard] = Field(default_factory=list)
+    interpretative_notes: list[AllergyNote] = Field(default_factory=list)
+
+
+class CancerMarker(BaseModel):
+    """One cancer-marker card on Detailed Cancer Screening (female 747:5865)."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: str = ""
+    name: str
+    marker: str = ""
+    value: float | str | None = None
+    unit: str = "ng/ml"
+    ref: float | str | None = None
+    status: str | None = None
+    highlight: bool = False
+    icon: str = ""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _aliases(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        data = dict(data)
+        if not data.get("id"):
+            data["id"] = data.get("marker_id") or data.get("key") or ""
+        if data.get("ref") is None:
+            data["ref"] = data.get("ref_range") or data.get("reference")
+        if not data.get("marker"):
+            data["marker"] = data.get("code") or data.get("test") or ""
+        return data
+
+
+class CancerFollowupCard(BaseModel):
+    """One recommended-follow-up tile on a cancer detail page."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: str = ""
+    title: str
+    body: str = ""
+    icon: str = ""
+
+
+class CancerDetail(BaseModel):
+    """One condition page after Detailed Cancer Screening (female breast 747:6246)."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: str = ""
+    title: str = ""
+    what_title: str = ""
+    what_text: str = ""
+    insights_title: str = ""
+    insights: list[str] = Field(default_factory=list)
+    influences_title: str = ""
+    influences: list[str] = Field(default_factory=list)
+    followup_title: str = ""
+    followup: list[CancerFollowupCard] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _aliases(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        data = dict(data)
+        if not data.get("what_text"):
+            data["what_text"] = data.get("what_is") or data.get("description") or ""
+        if not data.get("insights"):
+            data["insights"] = data.get("actionable_insights") or data.get("tips") or []
+        if not data.get("influences"):
+            data["influences"] = data.get("factors") or data.get("chips") or []
+        if not data.get("followup"):
+            data["followup"] = data.get("follow_up") or data.get("recommendations") or []
+        return data
+
+    @field_validator("insights", "influences", mode="before")
+    @classmethod
+    def _coerce_strings(cls, value: Any) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, str):
+            return [part.strip() for part in value.split("\n") if part.strip()]
+        if isinstance(value, list):
+            out: list[str] = []
+            for item in value:
+                if isinstance(item, str) and item.strip():
+                    out.append(item.strip())
+                elif isinstance(item, dict) and item.get("text"):
+                    out.append(str(item["text"]).strip())
+                elif isinstance(item, dict) and item.get("name"):
+                    out.append(str(item["name"]).strip())
+            return out
+        return []
 
 
 class CancerSection(BaseModel):
     """Optional cancer block. Presence of this object inserts cancer pages."""
 
     model_config = ConfigDict(extra="allow")
+
+    what_is_cancer: str | None = None
+    snapshot_title: str | None = None
+    insight: str | None = None
+    insight_title: str | None = None
+    markers: list[CancerMarker] = Field(default_factory=list)
+    details: list[CancerDetail] = Field(default_factory=list)
 
 
 class BioReport(BaseModel):

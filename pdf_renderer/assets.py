@@ -327,17 +327,136 @@ def back_cover_asset_urls(*, for_http: bool = False) -> dict[str, str]:
 
 
 def allergy_cancer_asset_urls(*, for_http: bool = False) -> dict[str, str]:
-    """Return optional allergy/cancer divider asset URLs (Figma 747:1096)."""
-    base_dir = Path(pdf_config.STATIC_DIR) / "assets" / "allergy_cancer"
+    """Return optional allergy/cancer divider + overview asset URLs."""
+    divider_dir = Path(pdf_config.STATIC_DIR) / "assets" / "allergy_cancer"
+    overview_dir = Path(pdf_config.STATIC_DIR) / "assets" / "allergy"
+    detail_dir = Path(pdf_config.STATIC_DIR) / "assets" / "disease_detail"
 
-    def resolve(name: str) -> str:
-        path = base_dir / name
+    def resolve(base: Path, folder: str, name: str) -> str:
         if for_http:
-            return f"/static/assets/allergy_cancer/{name}"
-        return path.resolve().as_uri()
+            return f"/static/assets/{folder}/{name}"
+        return (base / name).resolve().as_uri()
+
+    icons_dir = overview_dir / "icons"
+
+    def resolve_icon(name: str) -> str:
+        if for_http:
+            return f"/static/assets/allergy/icons/{name}"
+        return (icons_dir / name).resolve().as_uri()
 
     return {
-        "ac_page_bg": resolve("page_bg.png"),
+        "ac_page_bg": resolve(divider_dir, "allergy_cancer", "page_bg.png"),
+        "cs_page_bg": resolve(
+            Path(pdf_config.STATIC_DIR) / "assets" / "cancer",
+            "cancer",
+            "page_bg.png",
+        ),
+        "dcs_title_line": resolve(
+            Path(pdf_config.STATIC_DIR) / "assets" / "cancer",
+            "cancer",
+            "title_line.svg",
+        ),
+        "dcs_icon_bg": resolve(
+            Path(pdf_config.STATIC_DIR) / "assets" / "cancer" / "icons",
+            "cancer/icons",
+            "icon_bg.svg",
+        ),
+        "dcs_icon_afp": resolve(
+            Path(pdf_config.STATIC_DIR) / "assets" / "cancer" / "icons",
+            "cancer/icons",
+            "afp.svg",
+        ),
+        "dcs_icon_breast": resolve(
+            Path(pdf_config.STATIC_DIR) / "assets" / "cancer" / "icons",
+            "cancer/icons",
+            "breast.svg",
+        ),
+        "dcs_icon_ovarian": resolve(
+            Path(pdf_config.STATIC_DIR) / "assets" / "cancer" / "icons",
+            "cancer/icons",
+            "ovarian.svg",
+        ),
+        "dcs_icon_colorectal": resolve(
+            Path(pdf_config.STATIC_DIR) / "assets" / "cancer" / "icons",
+            "cancer/icons",
+            "colorectal.svg",
+        ),
+        "dcs_icon_pancreatic": resolve(
+            Path(pdf_config.STATIC_DIR) / "assets" / "cancer" / "icons",
+            "cancer/icons",
+            "pancreatic.svg",
+        ),
+        "dcs_icon_prostate": resolve(
+            Path(pdf_config.STATIC_DIR) / "assets" / "cancer" / "icons",
+            "cancer/icons",
+            "prostate.svg",
+        ),
+        "dcs_insight": resolve(
+            Path(pdf_config.STATIC_DIR) / "assets" / "cancer" / "icons",
+            "cancer/icons",
+            "insight.svg",
+        ),
+        "cd_title_line": resolve(
+            Path(pdf_config.STATIC_DIR) / "assets" / "cancer",
+            "cancer",
+            "title_line_breast.svg",
+        ),
+        "cd_report_circle": resolve(
+            Path(pdf_config.STATIC_DIR) / "assets" / "cancer" / "followup",
+            "cancer/followup",
+            "report_circle.svg",
+        ),
+        "cd_report": resolve(
+            Path(pdf_config.STATIC_DIR) / "assets" / "cancer" / "followup",
+            "cancer/followup",
+            "report.svg",
+        ),
+        "cd_icon_oncology": resolve(
+            Path(pdf_config.STATIC_DIR) / "assets" / "cancer" / "followup",
+            "cancer/followup",
+            "oncology.svg",
+        ),
+        "cd_icon_imaging": resolve(
+            Path(pdf_config.STATIC_DIR) / "assets" / "cancer" / "followup",
+            "cancer/followup",
+            "imaging.svg",
+        ),
+        "cd_icon_clinic": resolve(
+            Path(pdf_config.STATIC_DIR) / "assets" / "cancer" / "followup",
+            "cancer/followup",
+            "clinic.svg",
+        ),
+        "cd_icon_diagnosis": resolve(
+            Path(pdf_config.STATIC_DIR) / "assets" / "cancer" / "followup",
+            "cancer/followup",
+            "diagnosis.svg",
+        ),
+        "cd_icon_labs": resolve(
+            Path(pdf_config.STATIC_DIR) / "assets" / "cancer" / "followup",
+            "cancer/followup",
+            "labs.svg",
+        ),
+        "ao_title_line": resolve(overview_dir, "allergy", "title_line.svg"),
+        "ab_title_line": resolve(overview_dir, "allergy", "title_line_breakdown.svg"),
+        "ai_title_line": resolve(overview_dir, "allergy", "title_line_insights.svg"),
+        "ai_star": resolve(overview_dir, "allergy", "insight_star.svg"),
+        "ai_info": resolve(overview_dir, "allergy", "insight_info.svg"),
+        "ao_metflux": resolve(detail_dir, "disease_detail", "metflux_logo.png"),
+        "ao_mark": resolve(detail_dir, "disease_detail", "brand_mark.png"),
+        "ab_icon_drugs": resolve_icon("drugs.svg"),
+        "ab_icon_pets": resolve_icon("pets.svg"),
+        "ab_icon_insects": resolve_icon("insects.svg"),
+        "ab_icon_non_veg": resolve_icon("non_veg.svg"),
+        "ab_icon_dairy": resolve_icon("dairy.svg"),
+        "ab_icon_moulds": resolve_icon("moulds.svg"),
+        "ab_icon_occupational": resolve_icon("occupational.svg"),
+        "ab_icon_parasites": resolve_icon("parasites.svg"),
+        "ab_icon_grass": resolve_icon("grass.svg"),
+        "ab_icon_weed_tree": resolve_icon("weed_tree.svg"),
+        "ab_icon_nuts": resolve_icon("nuts.svg"),
+        "ab_icon_dust_mites": resolve_icon("dust_mites.svg"),
+        "ab_icon_vegetables": resolve_icon("vegetables.svg"),
+        "ab_icon_spices": resolve_icon("spices.svg"),
     }
 
 

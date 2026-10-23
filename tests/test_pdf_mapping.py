@@ -226,6 +226,7 @@ def test_allergy_cancer_divider_only_when_json_has_section(sample_report: BioRep
     html = build_report_html(vm)
     assert vm.has_allergy_cancer is False
     assert "AllergyCancerDivider" not in html
+    assert "AllergyOverview" not in html
 
     payload = sample_report.to_dict()
     payload["allergy"] = {"items": []}
@@ -233,10 +234,304 @@ def test_allergy_cancer_divider_only_when_json_has_section(sample_report: BioRep
     vm_allergy = build_pdf_view_model(with_allergy)
     html_allergy = build_report_html(vm_allergy)
     assert vm_allergy.has_allergy_cancer is True
-    assert vm_allergy.allergy_cancer_page_count == 1
-    assert vm_allergy.page_count == vm.page_count + 1
+    assert vm_allergy.has_allergy is True
+    assert vm_allergy.allergy_cancer_page_count == 5
+    assert vm_allergy.page_count == vm.page_count + 5
     assert "AllergyCancerDivider" in html_allergy
+    assert "AllergyOverview" in html_allergy
+    assert "AllergyBreakdown" in html_allergy
+    assert "AllergyInsights" in html_allergy
     assert 'data-node-id="747:1096"' in html_allergy
+    assert 'data-node-id="747:5202"' in html_allergy
+    assert 'data-node-id="747:5335"' in html_allergy
+    assert 'data-node-id="747:5471"' in html_allergy
+    assert 'data-node-id="747:5562"' in html_allergy
+    assert "CancerScreeningDivider" not in html_allergy
+    assert 'data-node-id="747:5630"' not in html_allergy
+    assert 'data-node-id="747:5865"' not in html_allergy
+    assert 'data-node-id="747:6246"' not in html_allergy
+    assert 'data-node-id="747:6035"' not in html_allergy
+    assert 'data-node-id="747:6162"' not in html_allergy
+
+    payload["cancer"] = {}
+    with_both = BioReport.model_validate(payload)
+    vm_both = build_pdf_view_model(with_both)
+    html_both = build_report_html(vm_both)
+    assert vm_both.has_cancer is True
+    assert vm_both.allergy_cancer_page_count == 7
+    assert vm_both.page_count == vm.page_count + 7
+    assert "CancerScreeningDivider" in html_both
+    assert 'data-node-id="747:5630"' in html_both
+    assert 'data-node-id="741:881"' in html_both
+    assert 'data-node-id="747:5865"' not in html_both
+    assert 'data-node-id="747:6246"' not in html_both
+    assert 'data-node-id="747:6035"' not in html_both
+    assert 'data-node-id="747:6162"' not in html_both
+
+
+def test_cancer_divider_only_when_json_has_cancer(sample_report: BioReport):
+    vm = build_pdf_view_model(sample_report)
+    payload = sample_report.to_dict()
+    payload["cancer"] = {}
+    with_cancer = BioReport.model_validate(payload)
+    vm_cancer = build_pdf_view_model(with_cancer)
+    html_cancer = build_report_html(vm_cancer)
+    assert vm_cancer.has_cancer is True
+    assert vm_cancer.has_allergy is False
+    assert vm_cancer.allergy_cancer_page_count == 3
+    assert vm_cancer.page_count == vm.page_count + 3
+    assert "AllergyCancerDivider" in html_cancer
+    assert "CancerScreeningDivider" in html_cancer
+    assert "AllergyOverview" not in html_cancer
+    assert 'data-node-id="747:5630"' in html_cancer
+    assert 'data-template="CancerScreening"' in html_cancer
+    assert 'data-node-id="741:881"' in html_cancer
+    assert 'data-node-id="747:5865"' not in html_cancer
+    assert vm_cancer.cancer_screening is not None
+    assert vm_cancer.cancer_screening.layout == "male"
+    assert vm_cancer.cancer_screening.in_range == 3
+    assert vm_cancer.cancer_screening.total == 4
+    assert [m.name for m in vm_cancer.cancer_screening.markers] == [
+        "Liver Related Cancer",
+        "Prostate Cancer",
+        "Colorectal Cancer",
+        "Pancreatic Cancer",
+    ]
+    colorectal = next(m for m in vm_cancer.cancer_screening.markers if m.key == "colorectal")
+    assert colorectal.value == "5.2 ng/ml"
+    assert colorectal.status == "marginal"
+    assert colorectal.marker == "CEA"
+    assert vm_cancer.cancer_details == []
+    assert 'data-node-id="747:6246"' not in html_cancer
+    assert 'data-node-id="747:6035"' not in html_cancer
+    assert 'data-node-id="747:6162"' not in html_cancer
+
+
+def test_female_cancer_screening_maps_json_and_defaults(sample_report: BioReport):
+    female_base = _with_gender(sample_report, "female")
+    vm_base = build_pdf_view_model(female_base)
+    payload = female_base.to_dict()
+    payload["cancer"] = {}
+    female = BioReport.model_validate(payload)
+    vm_female = build_pdf_view_model(female)
+    html = build_report_html(vm_female)
+    assert vm_female.variant == "female"
+    assert vm_female.cancer_screening is not None
+    assert vm_female.allergy_cancer_page_count == 6
+    assert vm_female.page_count == vm_base.page_count + 6
+    assert 'data-node-id="747:5865"' in html
+    assert 'data-node-id="747:6246"' in html
+    assert 'data-node-id="747:6035"' in html
+    assert 'data-node-id="747:6162"' in html
+    assert [d.title for d in vm_female.cancer_details] == [
+        "Breast Cancer Screening",
+        "Ovarian Cancer Screening",
+        "Pancreatic Cancer Screening",
+    ]
+    assert vm_female.cancer_details[1].influences == [
+        "Endometriosis",
+        "Ovarian Cysts",
+        "Pelvic Infections",
+    ]
+    assert "Pancreatic Inflammation" in vm_female.cancer_details[2].influences
+    assert vm_female.cancer_details[2].followup[0].title == "GI Follow-up"
+    assert 'data-template="CancerScreening"' in html
+    assert vm_female.cancer_screening.in_range == 4
+    assert vm_female.cancer_screening.total == 5
+    names = [m.name for m in vm_female.cancer_screening.markers]
+    assert names == [
+        "AFP (Amniotic Fluid)",
+        "Breast Cancer",
+        "Ovarian Cancer",
+        "Colorectal Cancer",
+        "Pancreatic Cancer",
+    ]
+    breast = next(m for m in vm_female.cancer_screening.markers if m.key == "breast")
+    assert breast.value == "5.2 ng/ml"
+    assert breast.status == "critical"
+    assert "5.2 ng/ml" in html
+    assert "Most markers are within range" in html
+
+    payload["cancer"] = {
+        "what_is_cancer": "Custom definition.",
+        "insight": "Watch the ovarian marker closely.",
+        "markers": [
+            {
+                "id": "ovarian",
+                "name": "Ovarian Cancer",
+                "value": 9.4,
+                "unit": "ng/ml",
+                "ref": 2.3,
+                "status": "critical",
+                "highlight": True,
+                "marker": "CA 125",
+            }
+        ],
+    }
+    custom = BioReport.model_validate(payload)
+    vm_custom = build_pdf_view_model(custom)
+    html_custom = build_report_html(vm_custom)
+    assert vm_custom.cancer_screening is not None
+    assert vm_custom.cancer_screening.total == 1
+    assert vm_custom.cancer_screening.in_range == 0
+    assert vm_custom.cancer_screening.highlight_name == "Ovarian Cancer"
+    assert vm_custom.cancer_screening.highlight_marker == "CA 125"
+    assert vm_custom.cancer_screening.markers[0].value == "9.4 ng/ml"
+    assert "Custom definition." in html_custom
+    assert "Watch the ovarian marker closely." in html_custom
+    assert "9.4 ng/ml" in html_custom
+    assert "Breast Cancer Screening" in html_custom
+
+    payload["cancer"]["details"] = [
+        {
+            "id": "breast",
+            "title": "Custom Breast Page",
+            "what_text": "Custom breast explainer.",
+            "insights": ["Eat well."],
+            "influences": ["Family history"],
+            "followup": [
+                {
+                    "id": "oncology",
+                    "title": "Oncology visit",
+                    "body": "Book this week",
+                }
+            ],
+        }
+    ]
+    detailed = BioReport.model_validate(payload)
+    vm_detail = build_pdf_view_model(detailed)
+    html_detail = build_report_html(vm_detail)
+    assert vm_detail.cancer_details[0].title == "Custom Breast Page"
+    assert vm_detail.cancer_details[0].insights == ["Eat well."]
+    assert vm_detail.cancer_details[0].influences == ["Family history"]
+    assert vm_detail.cancer_details[0].followup[0].title == "Oncology visit"
+    assert "Custom Breast Page" in html_detail
+    assert "Custom breast explainer." in html_detail
+    assert "Family history" in html_detail
+
+
+def test_allergy_overview_maps_json_values(sample_report: BioReport):
+    payload = sample_report.to_dict()
+    payload["allergy"] = {
+        "total_ige": 1481.9,
+        "ige_unit": "IU/ml",
+        "ige_ref_low": 1.5,
+        "ige_ref_high": 158,
+        "recommendation": (
+            "Your IgE level is 14x above normal limits, indicating severe "
+            "systemic allergic sensitivity. Normal levels- (1.5-158 IU/ml)"
+        ),
+        "total_allergens_tested": "100+",
+        "sensitive_count": 2,
+        "normal_count": "98+",
+        "sensitivities": [
+            {
+                "name": "Tyrophagus Putrescentiae",
+                "category": "Dust Mites",
+                "value": 0.78,
+                "ref_range": "<0.35",
+                "risk": "Class 2 (Low)",
+            },
+            {
+                "name": "Tobacco Dust",
+                "category": "Dust Mites",
+                "value": 0.52,
+                "ref_range": "<0.35",
+                "risk": "Class 1 (Very Low)",
+            },
+        ],
+    }
+    report = BioReport.model_validate(payload)
+    vm = build_pdf_view_model(report)
+    html = build_report_html(vm)
+    assert vm.allergy is not None
+    assert vm.allergy.ige_value == "1481.9"
+    assert vm.allergy.ige_band == "VERY HIGH"
+    assert vm.allergy.sensitive_count == "2"
+    assert vm.allergy.rows[0].name == "Tyrophagus Putrescentiae"
+    assert vm.allergy.rows[0].value == "0.78"
+    assert vm.allergy.rows[1].value == "0.52"
+    assert "1481.9" in html
+    assert "Tyrophagus Putrescentiae" in html
+    assert "Tobacco Dust" in html
+    assert "Class 1 (Very Low)" in html
+    assert "14x above normal" in html
+    assert vm.allergy_breakdown is not None
+    assert vm.allergy_breakdown.categories[0].name == "Drugs"
+    assert len(vm.allergy_breakdown_pages) == 2
+    assert vm.allergy_breakdown_pages[1].categories[0].name == "Grass"
+    assert "Detailed Allergy Breakdown" in html
+    assert "Penicilloyl V" in html
+    assert "Cynodon Dactylon" in html
+    assert vm.allergy_insights is not None
+    assert vm.allergy_insights.insights[0].name == "Tyrophagus Putrescentiae"
+    assert "Detailed Allergy Insights" in html
+    assert "Bedding Protection" in html
+
+
+def test_allergy_insights_maps_json_values(sample_report: BioReport):
+    payload = sample_report.to_dict()
+    payload["allergy"] = {
+        "insights": [
+            {
+                "name": "House Dust",
+                "insight": "Limit bedroom carpets and wash bedding weekly.",
+            }
+        ],
+        "recommendations_title": "Actionable Recommendations (Home Control)",
+        "recommendations": [
+            {"title": "Air Filters", "body": "Use a HEPA air purifier in the bedroom."}
+        ],
+        "notes": [
+            {"title": "Retest:", "text": "Repeat IgE after 6 months of avoidance."}
+        ],
+    }
+    report = BioReport.model_validate(payload)
+    vm = build_pdf_view_model(report)
+    html = build_report_html(vm)
+    assert vm.allergy_insights is not None
+    assert vm.allergy_insights.insights[0].name == "House Dust"
+    assert vm.allergy_insights.insights[0].text.startswith("Limit bedroom")
+    assert vm.allergy_insights.recommendations_title == "Actionable Recommendations (Home Control)"
+    assert vm.allergy_insights.recommendations[0].title == "Air Filters"
+    assert vm.allergy_insights.notes[0].title == "Retest:"
+    assert "House Dust" in html
+    assert "HEPA air purifier" in html
+    assert 'data-node-id="747:5562"' in html
+
+
+def test_allergy_breakdown_maps_json_categories(sample_report: BioReport):
+    payload = sample_report.to_dict()
+    payload["allergy"] = {
+        "total_ige": 40,
+        "normal_categories": [
+            {
+                "id": "insects",
+                "name": "Insects",
+                "status": "Normal",
+                "items": ["Housefly (Musca Domestica)", "Apis Mellifera (Honey Bee)"],
+            },
+            {
+                "id": "dairy",
+                "name": "Dairy products",
+                "status": "Sensitive",
+                "items": "Cow Milk, Casein (Milk Protein)",
+            },
+        ],
+    }
+    report = BioReport.model_validate(payload)
+    vm = build_pdf_view_model(report)
+    html = build_report_html(vm)
+    assert vm.allergy_breakdown is not None
+    assert len(vm.allergy_breakdown_pages) == 1
+    assert len(vm.allergy_breakdown.categories) == 2
+    assert vm.allergy_breakdown.categories[0].key == "insects"
+    assert vm.allergy_breakdown.categories[0].items_text.startswith("Housefly")
+    assert vm.allergy_breakdown.categories[1].status == "Sensitive"
+    assert vm.allergy_breakdown.categories[1].status_tone == "sensitive"
+    assert "Cow Milk, Casein (Milk Protein)" in html
+    assert "AllergyBreakdown" in html
+    assert 'data-node-id="747:5471"' not in html
 
 
 def test_pdf_bytes_optional(user1_report: BioReport):

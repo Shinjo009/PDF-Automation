@@ -1,0 +1,70 @@
+{# Cancer condition page — female Breast Screening Figma 747:6246; values from cancer.details #}
+<section
+  class="page cd-figma cd-figma--{{ page.detail_id }}"
+  data-template="CancerDetail"
+  data-page="{{ page.page_no }}"
+  data-node-id="{{ page.node_id }}"
+>
+  <h1 class="cd-figma__title">{{ page.title }}</h1>
+  <img class="cd-figma__title-line" src="{{ assets.cd_title_line }}" alt="" aria-hidden="true" />
+
+  <article class="cd-figma__what">
+    <h2 class="cd-figma__h2" data-slot="cancer.what_title">{{ page.what_title }}</h2>
+    <p class="cd-figma__what-copy" data-slot="cancer.what_text">{{ page.what_text }}</p>
+  </article>
+
+  <article class="cd-figma__insights">
+    <h2 class="cd-figma__h2" data-slot="cancer.insights_title">{{ page.insights_title }}</h2>
+    <ul data-slot="cancer.insights">
+      {% for item in page.insights %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </article>
+
+  <article class="cd-figma__influences">
+    <h2 class="cd-figma__h2" data-slot="cancer.influences_title">{{ page.influences_title }}</h2>
+    <div class="cd-figma__chips" data-slot="cancer.influences">
+      {% for chip in page.influences %}
+      <span class="cd-figma__chip">{{ chip }}</span>
+      {% endfor %}
+    </div>
+  </article>
+
+  <div class="cd-figma__follow-head">
+    <span class="cd-figma__follow-icon" aria-hidden="true">
+      <img class="cd-figma__follow-circle" src="{{ assets.cd_report_circle }}" alt="" />
+      <img class="cd-figma__follow-clip" src="{{ assets.cd_report }}" alt="" width="29" height="29" />
+    </span>
+    <h2 class="cd-figma__h2" data-slot="cancer.followup_title">{{ page.followup_title }}</h2>
+  </div>
+
+  <div class="cd-figma__follow-grid" data-slot="cancer.followup">
+    {% for card in page.followup %}
+    <article class="cd-figma__card cd-figma__card--{{ card.tone }}">
+      <img
+        class="cd-figma__card-icon"
+        src="{{ assets['cd_icon_' ~ card.icon] }}"
+        alt=""
+        width="29"
+        height="29"
+      />
+      <h3 class="cd-figma__card-title">{{ card.title }}</h3>
+      <p class="cd-figma__card-body">{{ card.body }}</p>
+    </article>
+    {% endfor %}
+  </div>
+
+  <div class="cd-figma__footer">
+    <div class="cd-figma__footer-inner">
+      <div class="cd-figma__powered">
+        <span>Poweredby</span>
+        <img src="{{ assets.ao_metflux }}" alt="MetFlux Research" />
+      </div>
+      <p class="cd-figma__page-no">{{ "%02d"|format(page.page_no) }}</p>
+      <div class="cd-figma__footer-right">
+        <img class="cd-figma__mark" src="{{ assets.ao_mark }}" alt="Metsights" />
+      </div>
+    </div>
+  </div>
+</section>

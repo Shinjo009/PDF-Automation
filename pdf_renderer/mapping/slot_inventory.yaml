@@ -92,6 +92,68 @@ frames:
       - slot_id: disease.contributing_factors
       - slot_id: disease.score_badge
 
+  - template_id: AllergyCancerDivider
+    optional: true
+    when: allergy_or_cancer
+    slots: []
+
+  - template_id: AllergyOverview
+    optional: true
+    when: allergy
+    slots:
+      - slot_id: allergy.ige_value
+      - slot_id: allergy.ige_unit
+      - slot_id: allergy.ige_description
+      - slot_id: allergy.recommendation
+      - slot_id: allergy.total_tested
+      - slot_id: allergy.sensitive_count
+      - slot_id: allergy.normal_count
+      - slot_id: allergy.rows
+
+  - template_id: AllergyBreakdown
+    optional: true
+    when: allergy
+    slots:
+      - slot_id: allergy.breakdown_subtitle
+      - slot_id: allergy.breakdown_intro
+      - slot_id: allergy.normal_categories
+
+  - template_id: AllergyInsights
+    optional: true
+    when: allergy
+    slots:
+      - slot_id: allergy.insights
+      - slot_id: allergy.recommendations_title
+      - slot_id: allergy.recommendations
+      - slot_id: allergy.interpretative_notes
+
+  - template_id: CancerScreeningDivider
+    optional: true
+    when: cancer
+    slots: []
+
+  - template_id: CancerScreening
+    optional: true
+    when: cancer
+    slots:
+      - slot_id: cancer.what_is_cancer
+      - slot_id: cancer.snapshot_title
+      - slot_id: cancer.in_range
+      - slot_id: cancer.highlight
+      - slot_id: cancer.markers
+      - slot_id: cancer.insight
+      - slot_id: cancer.insight_title
+
+  - template_id: CancerDetail
+    optional: true
+    when: cancer_and_female
+    slots:
+      - slot_id: cancer.what_title
+      - slot_id: cancer.what_text
+      - slot_id: cancer.insights
+      - slot_id: cancer.influences
+      - slot_id: cancer.followup
+
   - template_id: BackCover
     male_page: 18
     female_page: 19

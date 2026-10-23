@@ -59,6 +59,56 @@ gauge_bindings:
   percentile_marker: current_status.percentile
   lifestyle_meter: current_status.lifestyle_contribution
 
+allergy_overview:
+  allergy.ige_value: allergy.total_ige|allergy.ige|allergy.total_ige_level
+  allergy.ige_unit: allergy.ige_unit
+  allergy.ige_description: allergy.ige_description
+  allergy.recommendation: allergy.recommendation
+  allergy.total_tested: allergy.total_allergens_tested
+  allergy.sensitive_count: allergy.sensitive_count
+  allergy.normal_count: allergy.normal_count
+  allergy.rows[].name: allergy.sensitivities[]|allergy.items[].name
+  allergy.rows[].category: allergy.sensitivities[]|allergy.items[].category
+  allergy.rows[].value: allergy.sensitivities[]|allergy.items[].value
+  allergy.rows[].ref_range: allergy.sensitivities[]|allergy.items[].ref_range
+  allergy.rows[].risk: allergy.sensitivities[]|allergy.items[].risk
+
+allergy_breakdown:
+  allergy.breakdown_subtitle: allergy.breakdown_subtitle
+  allergy.breakdown_intro: allergy.breakdown_intro
+  allergy.normal_categories[].name: allergy.normal_categories[]|allergy.categories[].name
+  allergy.normal_categories[].status: allergy.normal_categories[]|allergy.categories[].status
+  allergy.normal_categories[].items: allergy.normal_categories[]|allergy.categories[].items
+
+allergy_insights:
+  allergy.insights[].name: allergy.insights[]|allergy.clinical_insights[].name
+  allergy.insights[].text: allergy.insights[]|allergy.clinical_insights[].text
+  allergy.recommendations_title: allergy.recommendations_title
+  allergy.recommendations[].title: allergy.recommendations[]|allergy.actionable_recommendations[].title
+  allergy.recommendations[].body: allergy.recommendations[]|allergy.actionable_recommendations[].body
+  allergy.interpretative_notes[].title: allergy.interpretative_notes[]|allergy.notes[].title
+  allergy.interpretative_notes[].text: allergy.interpretative_notes[]|allergy.notes[].text
+
+cancer_screening:
+  cancer.what_is_cancer: cancer.what_is_cancer
+  cancer.snapshot_title: cancer.snapshot_title
+  cancer.insight: cancer.insight
+  cancer.insight_title: cancer.insight_title
+  cancer.markers[].name: cancer.markers[]|cancer.items[].name
+  cancer.markers[].value: cancer.markers[]|cancer.items[].value
+  cancer.markers[].ref: cancer.markers[]|cancer.items[].ref
+  cancer.markers[].status: cancer.markers[]|cancer.items[].status
+  cancer.markers[].marker: cancer.markers[]|cancer.items[].marker
+
+cancer_detail:
+  cancer.title: cancer.details[].title
+  cancer.what_title: cancer.details[].what_title
+  cancer.what_text: cancer.details[].what_text
+  cancer.insights: cancer.details[].insights
+  cancer.influences: cancer.details[].influences
+  cancer.followup[].title: cancer.details[].followup[].title
+  cancer.followup[].body: cancer.details[].followup[].body
+
 validation_gate:
   - rendered_disease_score_equals_json
   - rendered_disease_title_equals_json

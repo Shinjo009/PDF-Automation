@@ -65,3 +65,28 @@ PYTHONPATH=. pytest tests/test_pdf_mapping.py -v
 
 When BioReport includes a non-empty `health_trends.series`, divider + chart
 pages are inserted after Lifestyle Diseases Risk Analysis.
+
+## Optional Allergy pages
+
+When BioReport includes an `allergy` object, two pages are inserted after
+Lifestyle Diseases Risk Analysis (before Health Trends):
+
+1. Allergy / Cancer divider (Figma 747:1096)
+2. Allergy Sensitivity Overview (Figma 747:5202) — IgE value, gauge, recommendation,
+   ELISA summary counts, and detected-sensitivity rows all bind from JSON.
+3. Detailed Allergy Breakdown (Figma 747:5335 / 747:5471) — normal-category
+   cards from    `allergy.normal_categories` (name, status, items). First 8 cards
+   on 747:5335, remaining on 747:5471. If omitted, the Figma ELISA panel is used.
+4. Detailed Allergy Insights (Figma 747:5562) — clinical insights, recommendation
+   cards, and interpretative notes from `allergy.insights`,
+   `allergy.recommendations`, and `allergy.interpretative_notes`.
+
+A `cancer` object inserts Cancer Screening Overview (Figma 747:5630) after the
+allergy pages (or after the combined divider if there is no allergy). Detailed
+Cancer Screening follows: female 747:5865 or male 741:881, with marker cards
+from `cancer.markers` (gender-specific Figma defaults when omitted). Female
+reports then add Breast (747:6246), Ovarian (747:6035), and Pancreatic
+(747:6162) Cancer Screening pages from `cancer.details` (Figma female panels
+when omitted).
+`sensitivities` (or `items`) drives the allergy overview table; omit `allergy`
+to skip allergy content pages.

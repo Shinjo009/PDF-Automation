@@ -1,0 +1,12 @@
+{# Cancer Screening Overview divider — Figma node 747:5630 (full-page export + dynamic page no) #}
+<section
+  class="page cs-div-figma"
+  data-template="CancerScreeningDivider"
+  data-page="{{ cancer_divider_page_no }}"
+  data-node-id="747:5630"
+>
+  <div class="cs-div-figma__bg" aria-hidden="true">
+    <img class="cs-div-figma__bg-img" src="{{ assets.cs_page_bg }}" alt="" />
+  </div>
+  <p class="cs-div-figma__page-no">{{ "%02d"|format(cancer_divider_page_no) }}</p>
+</section>

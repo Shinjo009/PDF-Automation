@@ -465,7 +465,7 @@ def build_report_html(
             {
                 "id": "allergy_cancer",
                 "sr": f"{len(toc_rows) + 1:02d}",
-                "section": "Lifestyle Diseases Risk Analysis",
+                "section": "Allergy & Cancer",
                 "page": vm.allergy_cancer_page_range,
                 "dynamic_pages": True,
             }
@@ -483,6 +483,12 @@ def build_report_html(
     disease_end = 8 + len(vm.disease_pages)
     allergy_cancer_divider_page_no = (
         disease_end + 1 if vm.has_allergy_cancer else 0
+    )
+    cancer_content_pages = (1 if vm.cancer_screening else 0) + len(vm.cancer_details)
+    cancer_divider_page_no = (
+        disease_end + vm.allergy_cancer_page_count - cancer_content_pages
+        if vm.has_cancer
+        else 0
     )
     ht_divider_page_no = (
         disease_end + vm.allergy_cancer_page_count + 1 if vm.has_health_trends else 0
@@ -508,6 +514,18 @@ def build_report_html(
         allergy_cancer_divider_css_href=_css_href(
             "allergy_cancer_divider.css", for_http=for_http
         ),
+        allergy_overview_css_href=_css_href(
+            "allergy_overview.css", for_http=for_http
+        ),
+        allergy_breakdown_css_href=_css_href(
+            "allergy_breakdown.css", for_http=for_http
+        ),
+        allergy_insights_css_href=_css_href(
+            "allergy_insights.css", for_http=for_http
+        ),
+        cancer_divider_css_href=_css_href("cancer_divider.css", for_http=for_http),
+        cancer_screening_css_href=_css_href("cancer_screening.css", for_http=for_http),
+        cancer_detail_css_href=_css_href("cancer_detail.css", for_http=for_http),
         back_cover_css_href=_css_href("back_cover.css", for_http=for_http),
         status_color=risk_color(vm.overall_status),
         assets=assets,
@@ -518,6 +536,7 @@ def build_report_html(
         health_trends_pages=_health_trends_pages(vm),
         ht_divider_page_no=ht_divider_page_no,
         allergy_cancer_divider_page_no=allergy_cancer_divider_page_no,
+        cancer_divider_page_no=cancer_divider_page_no,
         toc_rows=toc_rows,
         preview_page=page,
         for_http=for_http,

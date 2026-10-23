@@ -1,0 +1,45 @@
+{# Detailed Allergy Breakdown — Figma 747:5335 / 747:5471; category cards from allergy JSON #}
+<section
+  class="page ab-figma"
+  data-template="AllergyBreakdown"
+  data-page="{{ page.page_no }}"
+  data-node-id="{{ page.node_id }}"
+>
+  <h1 class="ab-figma__title">Detailed Allergy Breakdown</h1>
+  <img class="ab-figma__title-line" src="{{ assets.ab_title_line }}" alt="" aria-hidden="true" />
+
+  <h2 class="ab-figma__subtitle" data-slot="allergy.breakdown_subtitle">{{ page.subtitle }}</h2>
+  <p class="ab-figma__intro" data-slot="allergy.breakdown_intro">{{ page.intro }}</p>
+
+  <div class="ab-figma__grid" data-slot="allergy.normal_categories">
+    {% for cat in page.categories %}
+    <article class="ab-figma__card" data-category="{{ cat.key }}">
+      <div class="ab-figma__card-head">
+        <img
+          class="ab-figma__icon"
+          src="{{ assets['ab_icon_' ~ cat.key] }}"
+          alt=""
+          width="20"
+          height="20"
+        />
+        <h3 class="ab-figma__card-title">{{ cat.name }}</h3>
+        <span class="ab-figma__badge ab-figma__badge--{{ cat.status_tone }}">{{ cat.status }}</span>
+      </div>
+      <p class="ab-figma__items">{{ cat.items_text }}</p>
+    </article>
+    {% endfor %}
+  </div>
+
+  <div class="ab-figma__footer">
+    <div class="ab-figma__footer-inner">
+      <div class="ab-figma__powered">
+        <span>Poweredby</span>
+        <img src="{{ assets.ao_metflux }}" alt="MetFlux Research" />
+      </div>
+      <p class="ab-figma__page-no">{{ "%02d"|format(page.page_no) }}</p>
+      <div class="ab-figma__footer-right">
+        <img class="ab-figma__mark" src="{{ assets.ao_mark }}" alt="Metsights" />
+      </div>
+    </div>
+  </div>
+</section>

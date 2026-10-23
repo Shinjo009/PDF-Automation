@@ -34,10 +34,49 @@ FIXTURES = {
     "glance_mixed": _REPO_ROOT / "test_engine" / "preview_glance_mixed.json",
 }
 
+_SAMPLE_ALLERGY = {
+    "total_ige": 1481.9,
+    "ige_unit": "IU/ml",
+    "ige_ref_low": 1.5,
+    "ige_ref_high": 158,
+    "recommendation": (
+        "Your IgE level is 14x above normal limits, indicating severe "
+        "systemic allergic sensitivity. Normal levels- (1.5-158 IU/ml)"
+    ),
+    "total_allergens_tested": "100+",
+    "sensitive_count": 2,
+    "normal_count": "98+",
+    "sensitivities": [
+        {
+            "name": "Tyrophagus Putrescentiae",
+            "category": "Dust Mites",
+            "value": 0.78,
+            "ref_range": "<0.35",
+            "risk": "Class 2 (Low)",
+        },
+        {
+            "name": "Tobacco Dust",
+            "category": "Dust Mites",
+            "value": 0.52,
+            "ref_range": "<0.35",
+            "risk": "Class 1 (Very Low)",
+        },
+    ],
+}
+
 
 def _load_report(fixture: str, gender: str | None) -> BioReport:
-    path = FIXTURES.get(fixture, FIXTURES["user1"])
+    path = FIXTURES.get(
+        fixture if fixture not in {"allergy", "cancer", "allergy_cancer"} else "user1",
+        FIXTURES["user1"],
+    )
     data = json.loads(path.read_text(encoding="utf-8"))
+    if fixture in {"allergy", "allergy_cancer"}:
+        data["allergy"] = dict(_SAMPLE_ALLERGY)
+    if fixture in {"cancer", "allergy_cancer"}:
+        data["cancer"] = {}
+        if not gender:
+            gender = "female"
     if gender:
         data["patient"]["gender"] = gender
         data["patient"]["sex"] = gender
@@ -104,6 +143,17 @@ class PreviewHandler(SimpleHTTPRequestHandler):
           <a href="/preview?page=16&fixture={fixture}">Thyroid (16)</a>
           <a href="/preview?page=17&fixture={fixture}">Type 2 Diabetes (17)</a>
           <a href="/preview?page=18&fixture={fixture}">Back Cover (18)</a>
+          <a href="/preview?page=AllergyCancerDivider&fixture=allergy">Allergy Divider</a>
+          <a href="/preview?page=AllergyOverview&fixture=allergy">Allergy Overview</a>
+          <a href="/preview?page=AllergyBreakdown&fixture=allergy">Allergy Breakdown</a>
+          <a href="/preview?page=747:5471&fixture=allergy">Allergy Breakdown 2</a>
+          <a href="/preview?page=AllergyInsights&fixture=allergy">Allergy Insights</a>
+          <a href="/preview?page=CancerScreeningDivider&fixture=cancer">Cancer Divider</a>
+          <a href="/preview?page=CancerScreening&fixture=cancer&gender=female">Cancer Screening (F)</a>
+          <a href="/preview?page=CancerScreening&fixture=cancer&gender=male">Cancer Screening (M)</a>
+          <a href="/preview?page=747:6246&fixture=cancer&gender=female">Breast Screening (F)</a>
+          <a href="/preview?page=747:6035&fixture=cancer&gender=female">Ovarian Screening (F)</a>
+          <a href="/preview?page=747:6162&fixture=cancer&gender=female">Pancreatic Screening (F)</a>
           <a href="/preview?page=1&fixture={fixture}&gender=male">Male</a>
           <a href="/preview?page=1&fixture={fixture}&gender=female">Female</a>
           <a href="/preview?page=all&fixture={fixture}">All pages</a>
